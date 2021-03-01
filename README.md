@@ -30,7 +30,7 @@ pip install bronzebeard
     * Attach GND to GND
     * Attach TX to RX
     * Attach RX to TX
-    * Don't attach VCC (or jump it to the 5V input if you want power via this cable)
+    * Don't attach VCC (or jump to a 5V input if you want power via this cable)
 
 ## Build
 With Bronzebeard installed:
