@@ -15,6 +15,7 @@ However, there are plans to broaden support to also include [HiFive1 Rev B](http
 ## Setup
 DerzForth is an assembly program based on the [Bronzebeard](https://github.com/theandrew168/bronzebeard) project.
 Consult Bronzebeard's documentation for how to get it all setup (it's pretty easy and works on all major platforms).
+
 If you are unfamiliar with [virtual environments](https://docs.python.org/3/library/venv.html), I suggest taking a brief moment to learn about them and set one up.
 The Python docs provide a great [tutorial](https://docs.python.org/3/tutorial/venv.html) for getting started with virtual environments and packages.
 
