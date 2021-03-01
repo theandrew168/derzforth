@@ -44,7 +44,7 @@ Enable DFU mode on your given device:
 * **Wio Lite** - set BOOT switch to 1, press and release RESET
 
 ```
-python3 -m bronzebeard.dfu 28e9:0189 example.bin
+python3 -m bronzebeard.dfu 28e9:0189 derzforth.bin
 ```
 
 ## Execute
