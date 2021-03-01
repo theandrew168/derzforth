@@ -24,20 +24,19 @@ Bronzebeard can be installed via pip:
 pip install bronzebeard
 ```
 
-## Build
-With Bronzebeard installed:
-```
-python3 -m bronzebeard.asm derzforth.asm derzforth.bin
-```
-
-## Cable Setup
+### Cables
 1. Attach the USB to USB-C cable for programming via DFU
-2. (Optional) Attach the USB to TTL Serial cable ([adafruit](https://www.adafruit.com/product/954), [sparkfun](https://www.sparkfun.com/products/12977))
+2. Attach the USB to TTL Serial cable ([adafruit](https://www.adafruit.com/product/954), [sparkfun](https://www.sparkfun.com/products/12977))
     * Attach GND to GND
     * Attach TX to RX
     * Attach RX to TX
     * Don't attach VCC (or jump it to the 5V input if you want power via this cable)
 
+## Build
+With Bronzebeard installed:
+```
+python3 -m bronzebeard.asm derzforth.asm derzforth.bin
+```
 ## Program
 Enable DFU mode on your given device:
 * **Longan Nano** - press BOOT, press RESET, release RESET, release BOOT
