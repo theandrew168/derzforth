@@ -9,15 +9,23 @@ If you are looking for some introductory content surrounding the Forth language 
 
 This implementation's general structure is based on [Sectorforth](https://github.com/cesarblum/sectorforth) by Cesar Blum.
 He took inspiration from a [1996 Usenet thread](https://groups.google.com/g/comp.lang.forth/c/NS2icrCj1jQ/m/ohh9v4KphygJ) wherein folks discussed requirements for a minimal yet fully functional Forth implementation.
-At the moment, DerzForth only targets the [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-Development-Board-p-4205.html) and the [Wio Lite](https://www.seeedstudio.com/Wio-Lite-RISC-V-GD32VF103-p-4293.html).
-However, there are plans to broaden support to also include [HiFive1 Rev B](https://www.sifive.com/boards/hifive1-rev-b).
+
+## Requirements
+The hardware requirements for running DerzForth are very minimal and straightforward:
+* 16k RAM (and RAM_BASE_ADDR)
+* 64k ROM (and ROM_BASE_ADDR)
+* Serial UART (optional, but necessary for interaction)
+
+DerzForth has been tested on the following devices:
+* [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-Development-Board-p-4205.html)
+* [Wio Lite](https://www.seeedstudio.com/Wio-Lite-RISC-V-GD32VF103-p-4293.html)
 
 ## Setup
-DerzForth is an assembly program based on the [Bronzebeard](https://github.com/theandrew168/bronzebeard) project.
-Consult Bronzebeard's documentation for how to get it all setup (it's pretty easy and works on all major platforms).
-
 If you are unfamiliar with [virtual environments](https://docs.python.org/3/library/venv.html), I suggest taking a brief moment to learn about them and set one up.
 The Python docs provide a great [tutorial](https://docs.python.org/3/tutorial/venv.html) for getting started with virtual environments and packages.
+
+DerzForth is an assembly program based on the [Bronzebeard](https://github.com/theandrew168/bronzebeard) project.
+Consult Bronzebeard's project page for how to get it all setup (it's pretty easy and works on all major platforms).
 
 Bronzebeard can be installed via pip:
 ```
@@ -25,8 +33,9 @@ pip install bronzebeard
 ```
 
 ### Cables
+#### Longan Nano / Wio Lite
 1. Attach the USB to USB-C cable for programming via DFU
-2. Attach the USB to TTL Serial cable ([adafruit](https://www.adafruit.com/product/954), [sparkfun](https://www.sparkfun.com/products/12977))
+2. Attach the USB to TTL Serial cable for serial interaction ([adafruit](https://www.adafruit.com/product/954), [sparkfun](https://www.sparkfun.com/products/12977))
     * Attach GND to GND
     * Attach TX to RX
     * Attach RX to TX
@@ -35,8 +44,10 @@ pip install bronzebeard
 ## Build
 With Bronzebeard installed:
 ```
+# Longan Nano / Wio Lite (GD32VF103CBT6)
 python3 -m bronzebeard.asm derzforth.asm derzforth.bin
 ```
+
 ## Program
 Enable DFU mode on your given device:
 * **Longan Nano** - press BOOT, press RESET, release RESET, release BOOT
