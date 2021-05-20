@@ -104,13 +104,8 @@ This minimal selection of primitive words is used to bootstrap the Forth system.
 | `emit` | ( x -- )      | Write ASCII character to serial output        |
 
 ## FAQ
-### Is this ready to use?
-One big caveat to take note of: many USB-to-TTL serial cables supply 5V of power.
-The 4 pins on the end of the Nano are GND, TX, RX, and 3V3.
-Therefore if you attach the 4 cables from the adapter directly to these pins, the chip will bug out, run way too fast, and potentially be damaged.
-To avoid this, you can either power the Nano via USB-C and leave the serial cable's 5V line unplugged or you can jump the 5V line over to the 5V input on the far corner of the device.
-
-As for the this minimal Forth implementation, it does work.
+### Is this project ready to use? Does it work?
+As far as simple Forth implementations go, it does work!
 It's just so minimal at this point that it's sort of hard to tell.
 By default, it only supports the bare minimum builtin words as documented above.
 In order to build up the dictionary into something useful, it is necessary to enter most of the commands from [prelude.forth](https://github.com/theandrew168/derzforth/blob/main/prelude.forth).
@@ -127,6 +122,11 @@ Since baking these word definitions into the binary didn't really scale, I neede
 Next on my TODO list for this project is to get the SD card working (at least for reads) over SPI.
 That way I could store all of these words there and load them easily at runtime.
 I really want to implement a simple LOAD / EDIT system as described in [chapter 3 of "Starting Forth"](https://www.forth.com/starting-forth/3-forth-editor-blocks-buffer/) by Leo Brodie.
+
+One big caveat to take note of: many USB-to-TTL serial cables supply 5V of power.
+The 4 pins on the end of the Nano are GND, TX, RX, and 3V3.
+Therefore if you attach the 4 cables from the adapter directly to these pins, the chip will bug out, run way too fast, and potentially be damaged.
+To avoid this, you can either power the Nano via USB-C and leave the serial cable's 5V line unplugged or you can jump the 5V line over to the 5V input on the far corner of the device.
 
 I'm pretty happy with where this Forth interpreter is but it definitely has a ways to go before I'd call it "useful".
 Most of the design is based on Cesar Blum's [sectorforth](https://github.com/cesarblum/sectorforth) project.
