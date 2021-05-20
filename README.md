@@ -123,11 +123,6 @@ Next on my TODO list for this project is to get the SD card working (at least fo
 That way I could store all of these words there and load them easily at runtime.
 I really want to implement a simple LOAD / EDIT system as described in [chapter 3 of "Starting Forth"](https://www.forth.com/starting-forth/3-forth-editor-blocks-buffer/) by Leo Brodie.
 
-One big caveat to take note of: many USB-to-TTL serial cables supply 5V of power.
-The 4 pins on the end of the Nano are GND, TX, RX, and 3V3.
-Therefore if you attach the 4 cables from the adapter directly to these pins, the chip will bug out, run way too fast, and potentially be damaged.
-To avoid this, you can either power the Nano via USB-C and leave the serial cable's 5V line unplugged or you can jump the 5V line over to the 5V input on the far corner of the device.
-
 I'm pretty happy with where this Forth interpreter is but it definitely has a ways to go before I'd call it "useful".
 Most of the design is based on Cesar Blum's [sectorforth](https://github.com/cesarblum/sectorforth) project.
 His design is based on an [old Usenet thread](https://groups.google.com/g/comp.lang.forth/c/NS2icrCj1jQ) wherein some folks discussed the smallest number of initial builtin words that could be used to bootstrap a full Forth environment.
