@@ -1,3 +1,5 @@
+# python3 scripts/hashcheck.py gpio.forth prelude.forth rcu.forth
+
 from ctypes import c_uint32
 import fileinput
 
@@ -8,6 +10,14 @@ def tpop_hash(s):
         h = 37 * h + ord(c)
         h = c_uint32(h).value
     return h
+
+
+def word_size(s):
+    padding = 4 - (len(s) % 4)
+    if padding == 4:
+        return len(s)
+    else:
+        return len(s) + padding
 
 
 hashes = {}
@@ -23,3 +33,9 @@ for line in fileinput.input():
         print('COLLISION of {} and {}: {}'.format(name, hashes[h], h))
     else:
         hashes[h] = name
+
+
+without_hash = sum(word_size(name) for name in hashes.values())
+with_hash = 4 * len(hashes)
+savings = without_hash - with_hash
+print('TPOP hashing would save {} bytes'.format(savings))
