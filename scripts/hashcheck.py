@@ -12,6 +12,15 @@ def tpop_hash(s):
     return h
 
 
+def perl_hash(s):
+    h = 0
+    for c in s:
+        h = 33 * h + ord(c)
+        h = h + (h >> 5)
+        h = c_uint32(h).value
+    return h
+
+
 def word_size(s):
     padding = 4 - (len(s) % 4)
     if padding == 4:
@@ -29,6 +38,7 @@ for line in fileinput.input():
     name = line.split()[1]
 
     h = tpop_hash(name)
+#    h = perl_hash(name)
     if h in hashes and name != hashes[h]:
         print('COLLISION of {} and {}: {}'.format(name, hashes[h], h))
     else:
