@@ -128,16 +128,16 @@ copy:
     # setup copy count
     addi t2 zero %position(here, 0)
 copy_loop:
-    beq t2 zero %offset copy_done
+    beq t2 zero copy_done
     lw t3 t0 0  # [src] -> t3
     sw t1 t3 0  # [dest] <- t3
     addi t0 t0 4  # src += 4
     addi t1 t1 4  # dest += 4
     addi t2 t2 -4  # count -= 4
-    jal zero %offset copy_loop
+    jal zero copy_loop
 copy_done:
     # t0 = addr of start
-    # TODO: allow %position / %offset in %hi / %lo
+    # TODO: allow %position in %hi / %lo
     # lui t0 %hi(%position(start, RAM_BASE_ADDR))
     # addi t0 t0 %lo(%position(start, RAM_BASE_ADDR))
     lui t0 %hi(RAM_BASE_ADDR)
@@ -581,8 +581,8 @@ strncpy_done:
     jal zero next  # next
 
 word_semi:
-    pack(<I, %position(word_colon, RAM_BASE_ADDR))
-    pack(<B, F_IMMEDIATE | 1)
+    pack <I, %position(word_colon, RAM_BASE_ADDR)
+    pack <B, F_IMMEDIATE | 1
     string ";"
     align 4
 code_semi:
@@ -789,7 +789,7 @@ body_nand:
     sw DSP t0 0
     addi DSP DSP 4
     # next
-    jal zero %offset next
+    jal zero next
 
 # mark the location of the next new word
 here:

@@ -1,4 +1,4 @@
-# python3 scripts/hashcheck.py gpio.forth prelude.forth rcu.forth
+# cat examples/*.forth | python3 scripts/hashcheck.py
 
 from ctypes import c_uint32
 import fileinput
