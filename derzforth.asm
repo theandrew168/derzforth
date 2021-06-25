@@ -1,9 +1,11 @@
 CLOCK_FREQ = 8000000
 USART_BAUD = 115200
+
 ROM_BASE_ADDR = 0x08000000
 RAM_BASE_ADDR = 0x20000000
 RCU_BASE_ADDR = 0x40021000
 RCU_APB2EN_OFFSET = 0x18
+
 GPIO_BASE_ADDR_A = 0x40010800
 GPIO_BASE_ADDR_C = 0x40011000
 GPIO_CTL1_OFFSET = 0x04
@@ -12,6 +14,7 @@ GPIO_MODE_OUT_50MHZ = 0b11
 GPIO_CTL_IN_FLOATING = 0b01
 GPIO_CTL_OUT_PUSH_PULL = 0b00
 GPIO_CTL_OUT_ALT_PUSH_PULL = 0b10
+
 USART_BASE_ADDR_0 = 0x40013800
 USART_STAT_OFFSET = 0x00
 USART_DATA_OFFSET = 0x04
@@ -117,41 +120,31 @@ F_IMMEDIATE = 0b10000000
 F_HIDDEN    = 0b01000000
 F_LENGTH    = 0b00111111
 
+# copy code from ROM to RAM and jump to "start" (in RAM)
 # t0 = src, t1 = dest, t2 = count
 copy:
-    # setup copy src
-    lui t0 %hi(ROM_BASE_ADDR)
-    addi t0 t0 %lo(ROM_BASE_ADDR)
-    # setup copy dest
-    lui t1 %hi(RAM_BASE_ADDR)
-    addi t1 t1 %lo(RAM_BASE_ADDR)
-    # setup copy count
-    addi t2 zero %position(here, 0)
+    li t0 ROM_BASE_ADDR       # setup copy src
+    li t1 RAM_BASE_ADDR       # setup copy dest
+    li t2 %position(here, 0)  # setup copy count
 copy_loop:
-    beq t2 zero copy_done
-    lw t3 t0 0  # [src] -> t3
-    sw t1 t3 0  # [dest] <- t3
-    addi t0 t0 4  # src += 4
-    addi t1 t1 4  # dest += 4
+    beqz t2 copy_done
+    lw t3 0(t0)    # t3 <- [src]
+    sw t3 0(t1)    # t3 -> [dest]
+    addi t0 t0 4   # src += 4
+    addi t1 t1 4   # dest += 4
     addi t2 t2 -4  # count -= 4
-    jal zero copy_loop
+    j copy_loop
 copy_done:
-    # t0 = addr of start
-    # TODO: allow %position in %hi / %lo
-    # lui t0 %hi(%position(start, RAM_BASE_ADDR))
-    # addi t0 t0 %lo(%position(start, RAM_BASE_ADDR))
-    lui t0 %hi(RAM_BASE_ADDR)
-    addi t0 t0 %lo(RAM_BASE_ADDR)
-    addi t0 t0 start
-    # jump to start
-    jalr zero t0 0
+    li t0 %position(start, RAM_BASE_ADDR)
+    jr t0  # jump to "start" in RAM
 
 # Procedure: token
 # Usage: jal ra token
 # Ret: a0 = addr of word name (0 if not found)
 # Ret: a1 = length of word name (0 if not found)
 token:
-    addi t0 zero 33  # put whitespace threshold value into t0
+    # put whitespace threshold value into t0
+    addi t0 zero '!'
 token_skip_whitespace:
     add t1 TBUF TPOS  # point t1 at current char
     lbu t2 t1 0  # load current char into t2
@@ -392,11 +385,11 @@ start:
 
 # print error indicator and fall through into reset
 error:
-    addi a5 zero 32  # space
+    addi a5 zero ' '
     jal ra putc
-    addi a5 zero 63  # ?
+    addi a5 zero '?'
     jal ra putc
-    addi a5 zero 10  # newline
+    addi a5 zero '\n'
     jal ra putc
 
 init:
@@ -422,13 +415,13 @@ jal zero interpreter
 
 # print "ok" and fall through into interpreter
 interpreter_ok:
-    addi a5 zero 32  # space
+    addi a5 zero ' '
     jal ra putc
-    addi a5 zero 111  # o
+    addi a5 zero 'o'
     jal ra putc
-    addi a5 zero 107  # k
+    addi a5 zero 'k'
     jal ra putc
-    addi a5 zero 10  # newline
+    addi a5 zero '\n'
     jal ra putc
 
 # main interpreter loop
@@ -506,7 +499,7 @@ interpreter_addr:
 interpreter_addr_addr:
     pack <I %position interpreter_addr RAM_BASE_ADDR
 
-# not technically required by should be here since the prev item wasn't an inst
+# not technically required but should be here since the prev item wasn't an inst
 align 4
 
 # standard forth routine: next
@@ -527,26 +520,30 @@ enter:
 ### dictionary starts here
 ###
 
+align 4
+
 word_exit:
     pack <I 0
     pack <B 4
     string exit
     align 4
 code_exit:
-    pack <I %position body_exit RAM_BASE_ADDR
+    pack <I %position(body_exit, RAM_BASE_ADDR)
 body_exit:
     addi RSP RSP -4
     lw IP RSP 0
     jal zero next
 
+align 4
+
 # TODO: error if word name is loo long (> 63) (len & F_LENGTH != 0)
 word_colon:
-    pack <I %position word_exit RAM_BASE_ADDR
+    pack <I %position(word_exit, RAM_BASE_ADDR)
     pack <B 1
     string :
     align 4
 code_colon:
-    pack <I %position body_colon RAM_BASE_ADDR
+    pack <I %position(body_colon, RAM_BASE_ADDR)
 body_colon:
     jal ra token  # a0 = addr, a1 = len
     sw HERE LATEST 0  # write link to prev word (write LATEST to HERE)
@@ -580,6 +577,8 @@ strncpy_done:
     addi STATE zero 1  # STATE = 1 (compile)
     jal zero next  # next
 
+align 4
+
 word_semi:
     pack <I, %position(word_colon, RAM_BASE_ADDR)
     pack <B, F_IMMEDIATE | 1
@@ -596,6 +595,8 @@ body_semi:
     addi HERE HERE 4  # HERE += 4
     addi STATE zero 0  # STATE = 0 (execute)
     jal zero next  # next
+
+align 4
 
 word_key:
     pack <I %position word_semi RAM_BASE_ADDR
@@ -618,6 +619,8 @@ body_key:
     # next
     jal zero next
 
+align 4
+
 word_emit:
     pack <I %position word_key RAM_BASE_ADDR
     pack <B 4
@@ -638,6 +641,8 @@ body_emit:
 
     # next
     jal zero next
+
+align 4
 
 word_at:
     pack <I %position word_emit RAM_BASE_ADDR
@@ -661,6 +666,8 @@ body_at:
     # next
     jal zero next
 
+align 4
+
 word_ex:
     pack <I %position word_at RAM_BASE_ADDR
     pack <B 1
@@ -683,6 +690,8 @@ body_ex:
     # next
     jal zero next
 
+align 4
+
 word_spat:
     pack <I %position word_ex RAM_BASE_ADDR
     pack <B 3
@@ -702,6 +711,8 @@ body_spat:
     # next
     jal zero next
 
+align 4
+
 word_rpat:
     pack <I %position word_spat RAM_BASE_ADDR
     pack <B 3
@@ -720,6 +731,8 @@ body_rpat:
 
     # next
     jal zero next
+
+align 4
 
 word_zeroeq:
     pack <I %position word_rpat RAM_BASE_ADDR
@@ -743,6 +756,8 @@ notzero:
     # next
     jal zero next
 
+align 4
+
 word_plus:
     pack <I %position word_zeroeq RAM_BASE_ADDR
     pack <B 1
@@ -764,6 +779,8 @@ body_plus:
     addi DSP DSP 4
     # next
     jal zero next
+
+align 4
 
 # mark the latest builtin word (nand)
 latest:
@@ -790,6 +807,8 @@ body_nand:
     addi DSP DSP 4
     # next
     jal zero next
+
+align 4
 
 # mark the location of the next new word
 here:
