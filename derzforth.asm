@@ -57,10 +57,10 @@ USART_CTL0_OFFSET = 0x0c
 # |------------------------------|
 
 # "The Classical Forth Registers"
-W = 's0'  # working register
-IP = 'gp'  # interpreter pointer
-DSP = 'sp'  # data stack pointer
-RSP = 'tp'  # return stack pointer
+W = s0  # working register
+IP = gp  # interpreter pointer
+DSP = sp  # data stack pointer
+RSP = tp  # return stack pointer
 
 #                Variables
 # |----------------------------------------|
@@ -76,13 +76,13 @@ RSP = 'tp'  # return stack pointer
 # |----------------------------------------|
 
 # Variable registers
-STATE = 's1'
-TIB = 's2'
-TBUF = 's3'
-TLEN = 's4'
-TPOS = 's5'
-HERE = 's6'
-LATEST = 's7'
+STATE = s1
+TIB = s2
+TBUF = s3
+TLEN = s4
+TPOS = s5
+HERE = s6
+LATEST = s7
 
 #  16KB      Memory Map
 # 0x0000 |----------------|
@@ -530,7 +530,7 @@ enter:
 word_exit:
     pack <I 0
     pack <B 4
-    string "exit"
+    string exit
     align 4
 code_exit:
     pack <I %position body_exit RAM_BASE_ADDR
@@ -543,7 +543,7 @@ body_exit:
 word_colon:
     pack <I %position word_exit RAM_BASE_ADDR
     pack <B 1
-    string ":"
+    string :
     align 4
 code_colon:
     pack <I %position body_colon RAM_BASE_ADDR
@@ -583,7 +583,7 @@ strncpy_done:
 word_semi:
     pack <I, %position(word_colon, RAM_BASE_ADDR)
     pack <B, F_IMMEDIATE | 1
-    string ";"
+    string ;
     align 4
 code_semi:
     pack <I %position(body_semi, RAM_BASE_ADDR)
@@ -600,7 +600,7 @@ body_semi:
 word_key:
     pack <I %position word_semi RAM_BASE_ADDR
     pack <B 3
-    string "key"
+    string key
     align 4
 code_key:
     pack <I %position body_key RAM_BASE_ADDR
@@ -621,7 +621,7 @@ body_key:
 word_emit:
     pack <I %position word_key RAM_BASE_ADDR
     pack <B 4
-    string "emit"
+    string emit
     align 4
 code_emit:
     pack <I %position body_emit RAM_BASE_ADDR
@@ -642,7 +642,7 @@ body_emit:
 word_at:
     pack <I %position word_emit RAM_BASE_ADDR
     pack <B 1
-    string "@"
+    string @
     align 4
 code_at:
     pack <I %position body_at RAM_BASE_ADDR
@@ -664,7 +664,7 @@ body_at:
 word_ex:
     pack <I %position word_at RAM_BASE_ADDR
     pack <B 1
-    string "!"
+    string !
     align 4
 code_ex:
     pack <I %position body_ex RAM_BASE_ADDR
@@ -686,7 +686,7 @@ body_ex:
 word_spat:
     pack <I %position word_ex RAM_BASE_ADDR
     pack <B 3
-    string "sp@"
+    string sp@
     align 4
 code_spat:
     pack <I %position body_spat RAM_BASE_ADDR
@@ -705,7 +705,7 @@ body_spat:
 word_rpat:
     pack <I %position word_spat RAM_BASE_ADDR
     pack <B 3
-    string "rp@"
+    string rp@
     align 4
 code_rpat:
     pack <I %position body_rpat RAM_BASE_ADDR
@@ -724,7 +724,7 @@ body_rpat:
 word_zeroeq:
     pack <I %position word_rpat RAM_BASE_ADDR
     pack <B 2
-    string "0="
+    string 0=
     align 4
 code_zeroeq:
     pack <I %position body_zeroeq RAM_BASE_ADDR
@@ -746,7 +746,7 @@ notzero:
 word_plus:
     pack <I %position word_zeroeq RAM_BASE_ADDR
     pack <B 1
-    string "+"
+    string +
     align 4
 code_plus:
     pack <I %position body_plus RAM_BASE_ADDR
@@ -770,7 +770,7 @@ latest:
 word_nand:
     pack <I %position word_plus RAM_BASE_ADDR
     pack <B 4
-    string "nand"
+    string nand
     align 4
 code_nand:
     pack <I %position body_nand RAM_BASE_ADDR
