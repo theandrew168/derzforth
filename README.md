@@ -17,7 +17,7 @@ The hardware requirements for running DerzForth are very minimal and straightfor
 * Serial UART (optional, but necessary for interaction)
 
 DerzForth has been tested on the following devices:
-* [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-Development-Board-p-4205.html)
+* [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-DEV-Board-p-4725.html)
 * [Wio Lite](https://www.seeedstudio.com/Wio-Lite-RISC-V-GD32VF103-p-4293.html)
 
 ## Setup
