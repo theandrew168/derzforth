@@ -196,7 +196,7 @@ tpop_hash:
 tpop_hash_loop:
     beqz a1, tpop_hash_done
     lbu t2, 0(a0)   # c <- [addr]
-    mul t0, t1, t0  # h = 37 * h
+    mul t0, t0, t1  # h = h * 37
     add t0, t0, t2  # h = h + c
 
     addi a0, a0, 1   # addr += 1
@@ -219,7 +219,7 @@ perl_hash:
 perl_hash_loop:
     beqz a1, perl_hash_done
     lbu t2, 0(a0)   # c <- [addr]
-    mul t0, t1, t0  # h = 33 * h
+    mul t0, t0, t1  # h = h * 33
     add t0, t0, t2  # h = h + c
     srai t3, t0, 5  # tmp = h >> 5
     add t0, t0, t3  # h = h + tmp
