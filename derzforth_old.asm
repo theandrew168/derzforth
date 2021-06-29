@@ -480,6 +480,7 @@ interpreter_execute:
     lw t0 W 0  # load code addr into t0 (t0 now holds the addr of the word's body)
     jalr zero t0 0  # execute the word
 
+align 4
 interpreter_addr:
     pack <I %position interpreter_interpret RAM_BASE_ADDR
 interpreter_addr_addr:
@@ -507,7 +508,6 @@ enter:
 ###
 
 align 4
-
 word_exit:
     pack <I 0
     pack <B 4
@@ -520,9 +520,8 @@ body_exit:
     lw IP RSP 0
     jal zero next
 
-align 4
-
 # TODO: error if word name is loo long (> 63) (len & F_LENGTH != 0)
+align 4
 word_colon:
     pack <I %position(word_exit, RAM_BASE_ADDR)
     pack <B 1
@@ -564,7 +563,6 @@ strncpy_done:
     jal zero next  # next
 
 align 4
-
 word_semi:
     pack <I, %position(word_colon, RAM_BASE_ADDR)
     pack <B, F_IMMEDIATE | 1
@@ -583,7 +581,6 @@ body_semi:
     jal zero next  # next
 
 align 4
-
 word_key:
     pack <I %position word_semi RAM_BASE_ADDR
     pack <B 3
@@ -629,7 +626,6 @@ body_emit:
     jal zero next
 
 align 4
-
 word_at:
     pack <I %position word_emit RAM_BASE_ADDR
     pack <B 1
@@ -653,7 +649,6 @@ body_at:
     jal zero next
 
 align 4
-
 word_ex:
     pack <I %position word_at RAM_BASE_ADDR
     pack <B 1
@@ -677,7 +672,6 @@ body_ex:
     jal zero next
 
 align 4
-
 word_spat:
     pack <I %position word_ex RAM_BASE_ADDR
     pack <B 3
@@ -698,7 +692,6 @@ body_spat:
     jal zero next
 
 align 4
-
 word_rpat:
     pack <I %position word_spat RAM_BASE_ADDR
     pack <B 3
@@ -719,7 +712,6 @@ body_rpat:
     jal zero next
 
 align 4
-
 word_zeroeq:
     pack <I %position word_rpat RAM_BASE_ADDR
     pack <B 2
@@ -743,7 +735,6 @@ notzero:
     jal zero next
 
 align 4
-
 word_plus:
     pack <I %position word_zeroeq RAM_BASE_ADDR
     pack <B 1
@@ -766,9 +757,8 @@ body_plus:
     # next
     jal zero next
 
-align 4
-
 # mark the latest builtin word (nand)
+align 4
 latest:
 word_nand:
     pack <I %position word_plus RAM_BASE_ADDR
@@ -794,7 +784,6 @@ body_nand:
     # next
     jal zero next
 
-align 4
-
 # mark the location of the next new word
+align 4
 here:

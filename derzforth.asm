@@ -1,25 +1,5 @@
 include gd32vf103.asm
 
-CLOCK_FREQ = 8000000  # default GD32BF103 clock freq
-USART_BAUD = 115200   # desired USART baud rate
-ROM_BASE_ADDR = 0x08000000
-RAM_BASE_ADDR = 0x20000000
-
-# "The Classical Forth Registers"
-W   = s0  # working register
-IP  = gp  # interpreter pointer
-DSP = sp  # data stack pointer
-RSP = tp  # return stack pointer
-
-# variable registers
-STATE  = s1  # 0 = execute, 1 = compile
-TIB    = s2  # text input buffer addr
-TBUF   = s3  # text buffer addr
-TLEN   = s4  # text buffer length
-TPOS   = s5  # text buffer current position
-HERE   = s6  # next dict entry addr
-LATEST = s7  # latest dict entry addr
-
 #  16KB      Memory Map
 # 0x0000 |----------------|
 #        |                |
@@ -39,6 +19,9 @@ LATEST = s7  # latest dict entry addr
 #        |                |
 # 0x3FFF |----------------|
 
+ROM_BASE_ADDR = 0x08000000
+RAM_BASE_ADDR = 0x20000000
+
 INTERPRETER_BASE  = 0x0000
 TIB_BASE          = 0x1c00
 DATA_STACK_BASE   = 0x2000
@@ -49,9 +32,29 @@ TIB_SIZE          = 0x0400  # 1K
 DATA_STACK_SIZE   = 0x1000  # 4K
 RETURN_STACK_SIZE = 0x1000  # 4K
 
+# serial config
+CLOCK_FREQ = 8000000  # default GD32BF103 clock freq
+USART_BAUD = 115200   # desired USART baud rate
+
+# word flags
 F_IMMEDIATE = 0b10000000
 F_HIDDEN    = 0b01000000
 F_LENGTH    = 0b00111111
+
+# "The Classical Forth Registers"
+W   = s0  # working register
+IP  = gp  # interpreter pointer
+DSP = sp  # data stack pointer
+RSP = tp  # return stack pointer
+
+# variable registers
+STATE  = s1  # 0 = execute, 1 = compile
+TIB    = s2  # text input buffer addr
+TBUF   = s3  # text buffer addr
+TLEN   = s4  # text buffer length
+TPOS   = s5  # text buffer current position
+HERE   = s6  # next dict entry addr
+LATEST = s7  # latest dict entry addr
 
 
 # jump to "main" since programs execute top to bottom
@@ -130,10 +133,10 @@ usart_init:
 # Arg: a0 = USART base addr
 # Ret: a1 = character received (a1 here for simpler getc + putc loops)
 getc:
-    lw t0 USART_STAT_OFFSET(a0)  # load status into t0
-    andi t0 t0 (1 << USART_STAT_RBNE_BIT)  # isolate read buffer not empty (RBNE) bit
-    beqz t0 getc                 # keep looping until ready to recv
-    lw a1 USART_DATA_OFFSET(a0)  # load char into a1
+    lw t0, USART_STAT_OFFSET(a0)  # load status into t0
+    andi t0, t0, (1 << USART_STAT_RBNE_BIT)  # isolate read buffer not empty (RBNE) bit
+    beqz t0, getc                 # keep looping until ready to recv
+    lw a1, USART_DATA_OFFSET(a0)  # load char into a1
 
     ret
 
@@ -143,18 +146,53 @@ getc:
 # Arg: a1 = character to send
 # Ret: none
 putc:
-    lw t0 USART_STAT_OFFSET(a0)  # load status into t0
-    andi t0 t0 (1 << USART_STAT_TBE_BIT)  # isolate transmit buffer empty (TBE) bit
-    beqz t0 putc                 # keep looping until ready to send
-    sw a1 USART_DATA_OFFSET(a0)  # write char from a1
+    lw t0, USART_STAT_OFFSET(a0)  # load status into t0
+    andi t0, t0, (1 << USART_STAT_TBE_BIT)  # isolate transmit buffer empty (TBE) bit
+    beqz t0, putc                 # keep looping until ready to send
+    sw a1, USART_DATA_OFFSET(a0)  # write char from a1
 
     ret
 
 
+# Func: memclr
+# Arg: a0 = buffer addr
+# Arg: a1 = buffer size
+# Ret: none
+memclr:
+    beqz a1, memclr_done  # loop til size == 0
+    sw 0, 0(a0)      # 0 -> [addr]
+    addi a0, a0, 4   # addr += 4
+    addi a1, a1, -4  # size -= 4
+    j memclr         # repeat loop
+memclr_done:
+    ret
+
+
+# Func: memcpy
+# Arg: a0 = src buffer addr
+# Arg: a1 = dst buffer addr
+# Arg: a2 = buffer size
+# Ret: none
+memcpy:
+    beqz a2, memcpy_done  # loop til size == 0
+    lw t0, 0(a0)     # t0 <- [src]
+    sw t0, 0(a1)     # t0 -> [dst]
+    addi a0, a0, 4   # src += 4
+    addi a1, a1, 4   # dst += 4
+    addi a2, a2, -4  # size -= 4
+    j memcpy         # repeat loop
+memcpy_done:
+    ret
+
+
+###
+### interpreter
+###
+
 main:
     # enable RCU (AFIO, GPIO port A, and USART0)
     li a0, RCU_BASE_ADDR
-    li a1, 0b0100000000000101
+    li a1, (1 << RCU_APB2EN_AFEN_BIT) | (1 << RCU_APB2EN_PAEN_BIT) | (1 << RCU_APB2EN_USART0EN_BIT)
     call rcu_init
 
     # enable TX pin
@@ -214,10 +252,163 @@ interpreter_ok:
     call putc
 
 interpreter:
+
+tib_clear:
+    mv a0, TIB
+    li a1, TIB_SIZE
+    call memclr
+
+tib_init:
+    mv TBUF, TIB  # set TBUF to TIB
+    li TLEN, 0    # set TLEN to 0
+    li TPOS, 0    # set TPOS to 0
+
+interpreter_repl:
     li a0, USART_BASE_ADDR_0
     call getc
     call putc
     j interpreter
 
-latest:
-here:
+interpreter_interpret:
+interpreter_compile:
+interpreter_execute:
+
+align 4
+interpreter_addr:
+    dw %position(interpreter_interpret, RAM_BASE_ADDR)
+interpreter_addr_addr:
+    dw %position(interpreter_addr, RAM_BASE_ADDR)
+
+# standard forth routine: next
+next:
+    lw W, 0(IP)
+    addi IP, IP, 4
+    lw t0, 0(W)
+    jr t0
+
+# standard forth routine: enter
+enter:
+    sw IP, 0(RSP)
+    addi RSP, RSP, 4
+    addi IP, W, 4  # skip code field
+    j next
+
+
+###
+### dictionary
+###
+
+align 4
+word_exit:
+    dw 0
+    dw 0x0050a18a
+code_exit:
+    dw %position(body_exit, RAM_BASE_ADDR)
+body_exit:
+    addi RSP, RSP, -4
+    lw IP, 0(RSP)
+    j next
+
+align 4
+word_colon:
+    dw %position(word_exit, RAM_BASE_ADDR)
+    dw 0x0000003a 
+code_colon:
+    dw %position(body_colon, RAM_BASE_ADDR)
+body_colon:
+    # TODO: impl this
+    j next
+
+align 4
+word_semi:
+    dw %position(word_colon, RAM_BASE_ADDR)
+    dw 0x0000003b
+code_semi:
+    dw %position(body_semi, RAM_BASE_ADDR)
+body_semi:
+    j next
+
+align 4
+word_at:
+    dw %position(word_semi, RAM_BASE_ADDR)
+    dw 0x00000040
+code_at:
+    dw %position(body_at, RAM_BASE_ADDR)
+body_at:
+    j next
+
+align 4
+word_ex:
+    dw %position(word_at, RAM_BASE_ADDR)
+    dw 0x00000021
+code_ex:
+    dw %position(body_ex, RAM_BASE_ADDR)
+body_ex:
+    j next
+
+align 4
+word_spat:
+    dw %position(word_ex, RAM_BASE_ADDR)
+    dw 0x0002776b
+code_spat:
+    dw %position(body_spat, RAM_BASE_ADDR)
+body_spat:
+    j next
+
+align 4
+word_rpat:
+    dw %position(word_spat, RAM_BASE_ADDR)
+    dw 0x00027212
+code_rpat:
+    dw %position(body_rpat, RAM_BASE_ADDR)
+body_rpat:
+    j next
+
+align 4
+word_zeroeq:
+    dw %position(word_rpat, RAM_BASE_ADDR)
+    dw 0x0000072d
+code_zeroeq:
+    dw %position(body_zeroeq, RAM_BASE_ADDR)
+body_zeroeq:
+    j next
+
+align 4
+word_plus:
+    dw %position(word_zeroeq, RAM_BASE_ADDR)
+    dw 0x0000002b
+code_plus:
+    dw %position(body_plus, RAM_BASE_ADDR)
+body_plus:
+    j next
+
+align 4
+word_nand:
+    dw %position(word_plus, RAM_BASE_ADDR)
+    dw 0x00571bf9
+code_nand:
+    dw %position(body_nand, RAM_BASE_ADDR)
+body_nand:
+    j next
+
+align 4
+word_key:
+    dw %position(word_nand, RAM_BASE_ADDR)
+    dw 0x00024b45
+code_key:
+    dw %position(body_key, RAM_BASE_ADDR)
+body_key:
+    j next
+
+align 4
+latest:  # mark the latest builtin word
+word_emit:
+    dw %position(word_key, RAM_BASE_ADDR)
+    dw 0x005066b7
+code_emit:
+    dw %position(body_emit, RAM_BASE_ADDR)
+body_emit:
+    j next
+
+align 4
+here:  # next new word will go here

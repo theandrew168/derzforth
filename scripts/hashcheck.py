@@ -29,23 +29,27 @@ def word_size(s):
         return len(s) + padding
 
 
-hashes = {}
-for line in fileinput.input():
-    line = line.strip()
-    if not line.startswith(':'):
-        continue
+def cli_main():
+    hashes = {}
+    for line in fileinput.input():
+        line = line.strip()
+        if not line.startswith(':'):
+            continue
 
-    name = line.split()[1]
+        name = line.split()[1]
 
-    h = tpop_hash(name)
-#    h = perl_hash(name)
-    if h in hashes and name != hashes[h]:
-        print('COLLISION of {} and {}: {}'.format(name, hashes[h], h))
-    else:
-        hashes[h] = name
+        h = tpop_hash(name)
+    #    h = perl_hash(name)
+        if h in hashes and name != hashes[h]:
+            print('COLLISION of {} and {}: {}'.format(name, hashes[h], h))
+        else:
+            hashes[h] = name
+
+    without_hash = sum(word_size(name) for name in hashes.values())
+    with_hash = 4 * len(hashes)
+    savings = without_hash - with_hash
+    print('TPOP hashing would save {} bytes'.format(savings))
 
 
-without_hash = sum(word_size(name) for name in hashes.values())
-with_hash = 4 * len(hashes)
-savings = without_hash - with_hash
-print('TPOP hashing would save {} bytes'.format(savings))
+if __name__ == '__main__':
+    cli_main()
