@@ -163,7 +163,7 @@ memclr:
     sw 0, 0(a0)      # 0 -> [addr]
     addi a0, a0, 4   # addr += 4
     addi a1, a1, -4  # size -= 4
-    j memclr         # repeat loop
+    j memclr
 memclr_done:
     ret
 
@@ -180,8 +180,56 @@ memcpy:
     addi a0, a0, 4   # src += 4
     addi a1, a1, 4   # dst += 4
     addi a2, a2, -4  # size -= 4
-    j memcpy         # repeat loop
+    j memcpy
 memcpy_done:
+    ret
+
+
+# Func: tpop_hash
+# Arg: a0 = buffer addr
+# Arg: a1 = buffer size
+# Ret: a0 = hash value
+tpop_hash:
+    li t0, 0   # t0 = hash value
+    li t1, 37  # t1 = prime multiplier
+
+tpop_hash_loop:
+    beqz a1, tpop_hash_done
+    lbu t2, 0(a0)   # c <- [addr]
+    mul t0, t1, t0  # h = 37 * h
+    add t0, t0, t2  # h = h + c
+
+    addi a0, a0, 1   # addr += 1
+    addi a1, a1, -1  # size -= 1
+    j tpop_hash_loop
+
+tpop_hash_done:
+    mv a0, t0  # setup return value
+    ret
+
+
+# Func: perl_hash
+# Arg: a0 = buffer addr
+# Arg: a1 = buffer size
+# Ret: a0 = hash value
+perl_hash:
+    li t0, 0   # t0 = hash value
+    li t1, 33  # t1 = prime multiplier
+
+perl_hash_loop:
+    beqz a1, perl_hash_done
+    lbu t2, 0(a0)   # c <- [addr]
+    mul t0, t1, t0  # h = 33 * h
+    add t0, t0, t2  # h = h + c
+    srai t3, t0, 5  # tmp = h >> 5
+    add t0, t0, t3  # h = h + tmp
+
+    addi a0, a0, 1   # addr += 1
+    addi a1, a1, -1  # size -= 1
+    j perl_hash_loop
+
+perl_hash_done:
+    mv a0, t0  # setup return value
     ret
 
 
