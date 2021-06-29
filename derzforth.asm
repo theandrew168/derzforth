@@ -264,12 +264,12 @@ main:
     li HERE, %position(here, RAM_BASE_ADDR)
     li LATEST, %position(latest, RAM_BASE_ADDR)
 
-    j init
+    j reset
 
 error:
     li a0, USART_BASE_ADDR_0
 
-    # print " ?" and fall into init
+    # print " ?" and fall into reset
     li a1, ' '
     call putc
     li a1, '?'
@@ -277,7 +277,7 @@ error:
     li a1, '\n'
     call putc
 
-init:
+reset:
     li W, 0
     li STATE, 0
     li DSP, RAM_BASE_ADDR + DATA_STACK_BASE
@@ -315,7 +315,7 @@ interpreter_repl:
     li a0, USART_BASE_ADDR_0
     call getc
     call putc
-    j interpreter
+    j interpreter_repl
 
 interpreter_interpret:
 interpreter_compile:
