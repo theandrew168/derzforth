@@ -115,9 +115,9 @@ copy_loop:
     beqz t2 copy_done
     lw t3 0(t0)    # t3 <- [src]
     sw t3 0(t1)    # t3 -> [dest]
-    addi t0 t0 4   # src += 4
-    addi t1 t1 4   # dest += 4
-    addi t2 t2 -4  # count -= 4
+    addi t0 t0 2   # src += 2
+    addi t1 t1 2   # dest += 2
+    addi t2 t2 -2  # count -= 2
     j copy_loop
 copy_done:
     li t0 %position(start, RAM_BASE_ADDR)
@@ -486,10 +486,8 @@ interpreter_addr:
 interpreter_addr_addr:
     pack <I %position interpreter_addr RAM_BASE_ADDR
 
-# not technically required but should be here since the prev item wasn't an inst
-align 4
-
 # standard forth routine: next
+align 4
 next:
     lw W IP 0
     addi IP IP 4
@@ -497,6 +495,7 @@ next:
     jalr zero t0 0
 
 # standard forth routine: enter
+align 4
 enter:
     sw RSP IP 0
     addi RSP RSP 4
@@ -603,7 +602,6 @@ body_key:
     jal zero next
 
 align 4
-
 word_emit:
     pack <I %position word_key RAM_BASE_ADDR
     pack <B 4
