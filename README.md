@@ -81,7 +81,7 @@ Here are a few potential examples:
 # Windows
 python3 -m serial.tools.miniterm COM3 115200
 # macOS
-python3 -m serial.tools.miniterm /dev/TODO_what_goes_here 115200
+python3 -m serial.tools.miniterm /dev/cu.usbserial-0001 115200
 # Linux
 python3 -m serial.tools.miniterm /dev/ttyUSB0 115200
 ```
