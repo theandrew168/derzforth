@@ -7,6 +7,10 @@ default: build
 build: derzforth.asm
 	bronzebeard derzforth.asm -c -o derzforth.bin
 
+.PHONY: build_verbose
+build_verbose: derzforth.asm
+	bronzebeard derzforth.asm -cv -o derzforth.bin
+
 .PHONY: program_dfu
 program_dfu: build
 	python3 -m bronzebeard.dfu 28e9:0189 derzforth.bin

@@ -59,7 +59,7 @@ LATEST = s7  # latest dict entry addr
 
 # jump to "main" since programs execute top to bottom
 # we do this to enable writing helper funcs at the top
-j main
+tail main
 
 
 # Func: rcu_init
@@ -123,7 +123,7 @@ usart_init:
     sw a1, USART_BAUD_OFFSET(a0)
 
     # enable USART (enable RX, enable TX, enable USART)
-    li t0, (1 << USART_CTL0_REN_BIT) | (1 << USART_CTL0_TEN_BIT) | (1 << USART_CTL0_UEN_BIT)
+    li t0, USART_CTL0_REN | USART_CTL0_TEN | USART_CTL0_UEN
     sw t0, USART_CTL0_OFFSET(a0)
 
     ret
@@ -134,7 +134,7 @@ usart_init:
 # Ret: a1 = character received (a1 here for simpler getc + putc loops)
 getc:
     lw t0, USART_STAT_OFFSET(a0)  # load status into t0
-    andi t0, t0, (1 << USART_STAT_RBNE_BIT)  # isolate read buffer not empty (RBNE) bit
+    andi t0, t0, USART_STAT_RBNE  # isolate read buffer not empty (RBNE) bit
     beqz t0, getc                 # keep looping until ready to recv
     lw a1, USART_DATA_OFFSET(a0)  # load char into a1
 
@@ -147,7 +147,7 @@ getc:
 # Ret: none
 putc:
     lw t0, USART_STAT_OFFSET(a0)  # load status into t0
-    andi t0, t0, (1 << USART_STAT_TBE_BIT)  # isolate transmit buffer empty (TBE) bit
+    andi t0, t0, USART_STAT_TBE   # isolate transmit buffer empty (TBE) bit
     beqz t0, putc                 # keep looping until ready to send
     sw a1, USART_DATA_OFFSET(a0)  # write char from a1
 
@@ -240,7 +240,7 @@ perl_hash_done:
 main:
     # enable RCU (AFIO, GPIO port A, and USART0)
     li a0, RCU_BASE_ADDR
-    li a1, (1 << RCU_APB2EN_AFEN_BIT) | (1 << RCU_APB2EN_PAEN_BIT) | (1 << RCU_APB2EN_USART0EN_BIT)
+    li a1, RCU_APB2EN_AFEN | RCU_APB2EN_PAEN | RCU_APB2EN_USART0EN
     call rcu_init
 
     # enable TX pin
