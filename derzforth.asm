@@ -92,8 +92,7 @@ gpio_init:
 
 gpio_init_config:
     # multiply pin number by 4 to get shift amount
-    addi t1, zero, 4
-    mul a1, a1, t1
+    slli a1, a1, 2
 
     # load current config
     lw t1, 0(t0)
@@ -160,10 +159,11 @@ putc:
 # Ret: none
 memclr:
     beqz a1, memclr_done  # loop til size == 0
-    sw 0, 0(a0)      # 0 -> [addr]
-    addi a0, a0, 4   # addr += 4
-    addi a1, a1, -4  # size -= 4
+    sb 0, 0(a0)           # 0 -> [addr]
+    addi a0, a0, 1        # addr += 1
+    addi a1, a1, -1       # size -= 1
     j memclr
+
 memclr_done:
     ret
 
@@ -175,13 +175,52 @@ memclr_done:
 # Ret: none
 memcpy:
     beqz a2, memcpy_done  # loop til size == 0
-    lw t0, 0(a0)     # t0 <- [src]
-    sw t0, 0(a1)     # t0 -> [dst]
-    addi a0, a0, 4   # src += 4
-    addi a1, a1, 4   # dst += 4
-    addi a2, a2, -4  # size -= 4
+    lb t0, 0(a0)          # t0 <- [src]
+    sb t0, 0(a1)          # t0 -> [dst]
+    addi a0, a0, 1        # src += 1
+    addi a1, a1, 1        # dst += 1
+    addi a2, a2, -1       # size -= 1
     j memcpy
+
 memcpy_done:
+    ret
+
+
+# Func: strtok
+# Arg: a0 = buffer addr
+# Arg: a1 = buffer size
+# Ret: a0 = token addr (0 if not found)
+# Ret: a1 = token size (0 if not found)
+strtok:
+    addi t0, zero, ' '         # t0 = whitespace threshold
+
+strtok_skip_whitespace:
+    beqz a1, strtok_not_found  # not found if we run out of chars
+    lbu t1, 0(a0)              # pull the next char
+    bgtu t1, t0, strtok_scan   # if not whitespace, start the scan
+    addi a0, a0, 1             # else advance ptr by one char
+    addi a1, a1, -1            # and reduce size by 1
+    j strtok_skip_whitespace   # repeat
+
+strtok_scan:
+    mv t2, a0                  # save the token's start addr for later
+
+strtok_scan_loop:
+    beqz a1, strtok_found      # early exit if reached EOB
+    lbu t1, 0(a0)              # pull the next char
+    bleu t1, t0, strtok_found  # if found whitespace, we are done
+    addi a0, a0, 1             # else advance ptr by one char
+    addi a1, a1, -1            # and reduce size by 1
+    j strtok_scan_loop         # repeat
+
+strtok_found:
+    sub a1, a0, t2             # a1 = (end - start) = token size
+    mv a0, t2                  # a0 = start = token addr
+    ret
+
+strtok_not_found:
+    addi a0, zero, 0           # a0 = 0 (not found)
+    addi a1, zero, 0           # a1 = 0 (not found)
     ret
 
 
@@ -364,7 +403,6 @@ word_colon:
 code_colon:
     dw %position(body_colon, RAM_BASE_ADDR)
 body_colon:
-    # TODO: impl this
     j next
 
 align 4
