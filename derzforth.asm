@@ -162,8 +162,7 @@ memclr:
     sb 0, 0(a0)           # 0 -> [addr]
     addi a0, a0, 1        # addr += 1
     addi a1, a1, -1       # size -= 1
-    j memclr
-
+    j memclr              # repeat
 memclr_done:
     ret
 
@@ -180,11 +179,18 @@ memcpy:
     addi a0, a0, 1        # src += 1
     addi a1, a1, 1        # dst += 1
     addi a2, a2, -1       # size -= 1
-    j memcpy
-
+    j memcpy              # repeat
 memcpy_done:
     ret
 
+
+# test cases:
+# ""      -> 0, 0
+# " "     -> 0, 0
+# "cat "  -> B+0, 3
+# "cat"   -> B+0, 3
+# " cat " -> B+1, 3
+# " cat"  -> B+1, 3
 
 # Func: strtok
 # Arg: a0 = buffer addr
@@ -204,7 +210,6 @@ strtok_skip_whitespace:
 
 strtok_scan:
     mv t2, a0                  # save the token's start addr for later
-
 strtok_scan_loop:
     beqz a1, strtok_found      # early exit if reached EOB
     lbu t1, 0(a0)              # pull the next char
@@ -224,6 +229,25 @@ strtok_not_found:
     ret
 
 
+# Func: lookup
+# Arg: a0 = addr of latest entry in word dict
+# Arg: a1 = hash of word name to lookup
+# Ret: a0 = addr of found word (0 if not found)
+lookup:
+    beqz a0, lookup_not_found  # not found if next word addr is 0 (end of dict)
+    lw t0, 4(a0)               # t0 = hash of word name
+    beq t0, a1, lookup_found   # done if hash (dict) matches hash (lookup)
+    lw a0, 0(a0)               # follow link to next word in dict
+    j lookup                   # repeat
+
+lookup_found:
+    ret
+
+lookup_not_found:
+    addi a0, zero, 0           # a0 = 0 (not found)
+    ret
+
+
 # Func: tpop_hash
 # Arg: a0 = buffer addr
 # Arg: a1 = buffer size
@@ -231,7 +255,6 @@ strtok_not_found:
 tpop_hash:
     li t0, 0   # t0 = hash value
     li t1, 37  # t1 = prime multiplier
-
 tpop_hash_loop:
     beqz a1, tpop_hash_done
     lbu t2, 0(a0)   # c <- [addr]
@@ -241,7 +264,6 @@ tpop_hash_loop:
     addi a0, a0, 1   # addr += 1
     addi a1, a1, -1  # size -= 1
     j tpop_hash_loop
-
 tpop_hash_done:
     mv a0, t0  # setup return value
     ret
@@ -254,7 +276,6 @@ tpop_hash_done:
 perl_hash:
     li t0, 0   # t0 = hash value
     li t1, 33  # t1 = prime multiplier
-
 perl_hash_loop:
     beqz a1, perl_hash_done
     lbu t2, 0(a0)   # c <- [addr]
@@ -266,7 +287,6 @@ perl_hash_loop:
     addi a0, a0, 1   # addr += 1
     addi a1, a1, -1  # size -= 1
     j perl_hash_loop
-
 perl_hash_done:
     mv a0, t0  # setup return value
     ret
