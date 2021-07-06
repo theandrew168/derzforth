@@ -36,10 +36,10 @@ RETURN_STACK_SIZE = 0x1000  # 4K
 CLOCK_FREQ = 8000000  # default GD32BF103 clock freq
 USART_BAUD = 115200   # desired USART baud rate
 
-# word flags
-F_IMMEDIATE = 0b10000000
-F_HIDDEN    = 0b01000000
-F_LENGTH    = 0b00111111
+# word flags (top 2 bits of hash)
+FLAGS_MASK  = 0xc0000000
+F_IMMEDIATE = 0x80000000
+F_HIDDEN    = 0x40000000
 
 # "The Classical Forth Registers"
 W   = s0  # working register
@@ -69,7 +69,7 @@ tail main
 rcu_init:
     # store config
     sw a1, RCU_APB2EN_OFFSET(a0)
-
+rcu_init_done:
     ret
 
 
@@ -81,35 +81,28 @@ rcu_init:
 gpio_init:
     # advance to CTL0
     addi t0, a0, GPIO_CTL0_OFFSET
-
     # if pin number is less than 8, CTL0 is correct
     slti t1, a1, 8
     bnez t1, gpio_init_config
-
     # else we need CTL1 and then subtract 8 from the pin number
     addi t0, t0, 4
     addi a1, a1, -8
-
 gpio_init_config:
     # multiply pin number by 4 to get shift amount
     slli a1, a1, 2
-
     # load current config
     lw t1, 0(t0)
-
     # align and clear existing pin config
     li t2, 0b1111
     sll t2, t2, a1
     not t2, t2
     and t1, t1, t2
-
     # align and apply new pin config
     sll a2, a2, a1
     or t1, t1, a2
-
     # store updated config
     sw t1, 0(t0)
-
+gpio_init_done:
     ret
 
 
@@ -120,11 +113,10 @@ gpio_init_config:
 usart_init:
     # store clkdiv
     sw a1, USART_BAUD_OFFSET(a0)
-
     # enable USART (enable RX, enable TX, enable USART)
     li t0, USART_CTL0_REN | USART_CTL0_TEN | USART_CTL0_UEN
     sw t0, USART_CTL0_OFFSET(a0)
-
+usart_init_done:
     ret
 
 
@@ -136,7 +128,7 @@ getc:
     andi t0, t0, USART_STAT_RBNE  # isolate read buffer not empty (RBNE) bit
     beqz t0, getc                 # keep looping until ready to recv
     lw a1, USART_DATA_OFFSET(a0)  # load char into a1
-
+getc_done:
     ret
 
 
@@ -149,7 +141,7 @@ putc:
     andi t0, t0, USART_STAT_TBE   # isolate transmit buffer empty (TBE) bit
     beqz t0, putc                 # keep looping until ready to send
     sw a1, USART_DATA_OFFSET(a0)  # write char from a1
-
+putc_done:
     ret
 
 
@@ -199,7 +191,6 @@ memcpy_done:
 # Ret: a1 = token size (0 if not found)
 strtok:
     addi t0, zero, ' '         # t0 = whitespace threshold
-
 strtok_skip_whitespace:
     beqz a1, strtok_not_found  # not found if we run out of chars
     lbu t1, 0(a0)              # pull the next char
@@ -207,7 +198,6 @@ strtok_skip_whitespace:
     addi a0, a0, 1             # else advance ptr by one char
     addi a1, a1, -1            # and reduce size by 1
     j strtok_skip_whitespace   # repeat
-
 strtok_scan:
     mv t2, a0                  # save the token's start addr for later
 strtok_scan_loop:
@@ -217,12 +207,10 @@ strtok_scan_loop:
     addi a0, a0, 1             # else advance ptr by one char
     addi a1, a1, -1            # and reduce size by 1
     j strtok_scan_loop         # repeat
-
 strtok_found:
     sub a1, a0, t2             # a1 = (end - start) = token size
     mv a0, t2                  # a0 = start = token addr
     ret
-
 strtok_not_found:
     addi a0, zero, 0           # a0 = 0 (not found)
     addi a1, zero, 0           # a1 = 0 (not found)
@@ -239,10 +227,9 @@ lookup:
     beq t0, a1, lookup_found   # done if hash (dict) matches hash (lookup)
     lw a0, 0(a0)               # follow link to next word in dict
     j lookup                   # repeat
-
 lookup_found:
+    # a0 is already pointing at the current dict entry
     ret
-
 lookup_not_found:
     addi a0, zero, 0           # a0 = 0 (not found)
     ret
@@ -253,19 +240,19 @@ lookup_not_found:
 # Arg: a1 = buffer size
 # Ret: a0 = hash value
 tpop_hash:
-    li t0, 0   # t0 = hash value
-    li t1, 37  # t1 = prime multiplier
+    li t0, 0            # t0 = hash value
+    li t1, 37           # t1 = prime multiplier
 tpop_hash_loop:
     beqz a1, tpop_hash_done
-    lbu t2, 0(a0)   # c <- [addr]
-    mul t0, t0, t1  # h = h * 37
-    add t0, t0, t2  # h = h + c
-
-    addi a0, a0, 1   # addr += 1
-    addi a1, a1, -1  # size -= 1
-    j tpop_hash_loop
+    lbu t2, 0(a0)       # c <- [addr]
+    mul t0, t0, t1      # h = h * 37
+    add t0, t0, t2      # h = h + c
+    addi a0, a0, 1      # addr += 1
+    addi a1, a1, -1     # size -= 1
+    j tpop_hash_loop    # repeat
 tpop_hash_done:
-    mv a0, t0  # setup return value
+    li t1, ~FLAGS_MASK  # clear the top two bits (used for word flags)
+    and a0, t0, t1      # a0 = final hash value
     ret
 
 
@@ -274,21 +261,21 @@ tpop_hash_done:
 # Arg: a1 = buffer size
 # Ret: a0 = hash value
 perl_hash:
-    li t0, 0   # t0 = hash value
-    li t1, 33  # t1 = prime multiplier
+    li t0, 0            # t0 = hash value
+    li t1, 33           # t1 = prime multiplier
 perl_hash_loop:
     beqz a1, perl_hash_done
-    lbu t2, 0(a0)   # c <- [addr]
-    mul t0, t0, t1  # h = h * 33
-    add t0, t0, t2  # h = h + c
-    srai t3, t0, 5  # tmp = h >> 5
-    add t0, t0, t3  # h = h + tmp
-
-    addi a0, a0, 1   # addr += 1
-    addi a1, a1, -1  # size -= 1
-    j perl_hash_loop
+    lbu t2, 0(a0)       # c <- [addr]
+    mul t0, t0, t1      # h = h * 33
+    add t0, t0, t2      # h = h + c
+    srai t3, t0, 5      # tmp = h >> 5
+    add t0, t0, t3      # h = h + tmp
+    addi a0, a0, 1      # addr += 1
+    addi a1, a1, -1     # size -= 1
+    j perl_hash_loop    # repeat
 perl_hash_done:
-    mv a0, t0  # setup return value
+    li t1, ~FLAGS_MASK  # clear the top two bits (used for word flags)
+    and a0, t0, t1      # a0 = final hash value
     ret
 
 
@@ -423,6 +410,7 @@ word_colon:
 code_colon:
     dw %position(body_colon, RAM_BASE_ADDR)
 body_colon:
+    # TODO: this is a bigger one
     j next
 
 align 4

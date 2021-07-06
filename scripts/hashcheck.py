@@ -3,12 +3,14 @@
 from ctypes import c_uint32
 import fileinput
 
+FLAGS_MASK = 0xc0000000
+
 
 def tpop_hash(s):
     h = 0
     for c in s:
         h = 37 * h + ord(c)
-        h = c_uint32(h).value
+        h = c_uint32(h).value & ~FLAGS_MASK
     return h
 
 
@@ -17,7 +19,7 @@ def perl_hash(s):
     for c in s:
         h = 33 * h + ord(c)
         h = h + (h >> 5)
-        h = c_uint32(h).value
+        h = c_uint32(h).value & ~FLAGS_MASK
     return h
 
 
@@ -39,7 +41,7 @@ def cli_main():
         name = line.split()[1]
 
         h = tpop_hash(name)
-    #    h = perl_hash(name)
+        #h = perl_hash(name)
         if h in hashes and name != hashes[h]:
             print('COLLISION of {} and {}: {}'.format(name, hashes[h], h))
         else:
