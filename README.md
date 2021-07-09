@@ -34,7 +34,7 @@ pip install bronzebeard stm32loader
 
 ### Cables
 #### Longan Nano / Wio Lite
-1. Attach the USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8))
+1. Attach a USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8))
     * Attach TX to RX
     * Attach RX to TX
     * Attach GND to GND
@@ -49,9 +49,9 @@ bronzebeard -c derzforth.asm
 ## Program
 Enable boot mode on your given device:
 * **Longan Nano** - press BOOT, press RESET, release RESET, release BOOT
-* **Wio Lite** - set BOOT switch to 1, press and release RESET
+* **Wio Lite** - flip BOOT switch to 1, press and release RESET
 
-Since programming and interaction both utilize serial UART, we can use [pySerial's](https://pyserial.readthedocs.io/en/latest/index.html) built-in terminal to communiate with the device.
+Since programming and interaction both utilize serial UART, we can use [pySerial's built-in terminal](https://pyserial.readthedocs.io/en/latest/index.html) to communiate with the device.
 
 To get a list of available serial ports, run the following command:
 ```
@@ -76,7 +76,7 @@ stm32loader -p /dev/ttyUSB0 -ewv bb.out
 ## Execute
 After programming, put the device back into normal mode:
 * **Longan Nano** - press and release RESET
-* **Wio Lite** - set BOOT switch to 0, press and release RESET
+* **Wio Lite** - flip BOOT switch to 0, press and release RESET
 
 ## Interact
 To interact with the device, the same port as above can used with [pySerial's builtin terminal](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm):
