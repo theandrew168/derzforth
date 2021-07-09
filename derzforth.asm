@@ -184,21 +184,15 @@ memcpy_done:
     ret
 
 
-# test cases:
-# ""      -> 0, 0
-# " "     -> 0, 0
-# "cat "  -> B+0, 3
-# "cat"   -> B+0, 3
-# " cat " -> B+1, 3
-# " cat"  -> B+1, 3
-
 # Func: strtok
 # Arg: a0 = buffer addr
 # Arg: a1 = buffer size
 # Ret: a0 = token addr (0 if not found)
 # Ret: a1 = token size (0 if not found)
+# Reg: a2 = total bytes consumed (0 if not found)
 strtok:
     addi t0, zero, ' '         # t0 = whitespace threshold
+    mv t2, a0                  # save buffer's start addr for later
 strtok_skip_whitespace:
     beqz a1, strtok_not_found  # not found if we run out of chars
     lbu t1, 0(a0)              # pull the next char
@@ -207,21 +201,24 @@ strtok_skip_whitespace:
     addi a1, a1, -1            # and reduce size by 1
     j strtok_skip_whitespace   # repeat
 strtok_scan:
-    mv t2, a0                  # save the token's start addr for later
+    mv t3, a0                  # save the token's start addr for later
 strtok_scan_loop:
-    beqz a1, strtok_found      # early exit if reached EOB
-    lbu t1, 0(a0)              # pull the next char
+    beqz a1, strtok_not_found  # early exit if reached EOB
+    lbu t1, 0(a0)              # grab the next char
     bleu t1, t0, strtok_found  # if found whitespace, we are done
     addi a0, a0, 1             # else advance ptr by one char
     addi a1, a1, -1            # and reduce size by 1
     j strtok_scan_loop         # repeat
 strtok_found:
-    sub a1, a0, t2             # a1 = (end - start) = token size
-    mv a0, t2                  # a0 = start = token addr
+    sub a2, a0, t2             # a2 = (end - buffer) = bytes consumed
+    addi a2, a2, 1             # add one to include the delimiter
+    sub a1, a0, t3             # a1 = (end - start) = token size
+    mv a0, t3                  # a0 = start = token addr
     ret
 strtok_not_found:
     addi a0, zero, 0           # a0 = 0 (not found)
     addi a1, zero, 0           # a1 = 0 (not found)
+    addi a2, zero, 0           # a2 = 0 (not found)
     ret
 
 
@@ -236,8 +233,7 @@ lookup:
     lw a0, 0(a0)               # follow link to next word in dict
     j lookup                   # repeat
 lookup_found:
-    # a0 is already pointing at the current dict entry
-    ret
+    ret  # a0 is already pointing at the current dict entry
 lookup_not_found:
     addi a0, zero, 0           # a0 = 0 (not found)
     ret
@@ -411,15 +407,36 @@ interpreter_repl_char:
 
 interpreter_interpret:
     # grab the next token
-    add a0, TBUF, TPOS   # a0 = buffer addr
-    mv a1, TLEN          # a1 = buffer size
-    call strtok          # a0 = str addr, a1 = str size (both 0 if not found)
-    beqz a0, error       # check for error from strtok
-    add TPOS, TPOS, a1   # update TPOS based on str size
+    add a0, TBUF, TPOS       # a0 = buffer addr
+    sub a1, TLEN, TPOS       # a1 = buffer size
+    call strtok              # a0 = str addr, a1 = str size, a2 = bytes consumed
+    beqz a0, interpreter_ok  # loop back to REPL if input is used up
+    add TPOS, TPOS, a2       # update TPOS based on strtok bytes consumed
+
+    mv SAVED0, a0
+    mv SAVED1, a1
+    mv SAVED2, a2
+
+    li a0, USART_BASE_ADDR_0
+    addi t0, a1, '0'
+    addi t1, a2, '0'
+    addi t2, zero, ' '
+
+    mv a1, t0
+    call putc
+    mv a1, t2
+    call putc
+    mv a1, t1
+    call putc
+    mv a1, t2
+    call putc
+
+    mv a0, SAVED0
+    mv a1, SAVED1
+    mv a2, SAVED2
 
     # hash the current token
     call tpop_hash  # a0 = str hash
-    mv SAVED0, a0   # save hash for later
 
     # lookup the hash in the word dict
     mv a1, a0       # a1 = hash of word name
@@ -427,7 +444,7 @@ interpreter_interpret:
     call lookup     # a0 = addr of found word (0 if not found)
     beqz a0, error  # check for error from lookup
 
-    # load and isolated the immediate word flag
+    # load and isolate the immediate flag
     lw t0, 4(a0)        # load word hash into t0
     li t1, F_IMMEDIATE  # load immediate flag into t1
     and t0, t0, t1      # isolate immediate bit in word hash
@@ -437,7 +454,8 @@ interpreter_interpret:
     beqz STATE, interpreter_execute  # or if STATE is 0 (execute)
 
 interpreter_compile:
-    # TODO: so
+    sw a0 0(HERE)       # write addr of found word to current definition
+    addi HERE, HERE, 4  # HERE += 4
     j interpreter_ok
 
 interpreter_execute:
@@ -446,6 +464,7 @@ interpreter_execute:
     lw W, 8(a0)  # W = addr of word's code field
     lw t0, 0(W)  # t0 = addr of word's body
     jr t0        # execute the word
+
 
 align 4
 interpreter_addr:
@@ -490,11 +509,11 @@ word_colon:
 code_colon:
     dw %position(body_colon, RAM_BASE_ADDR)
 body_colon:
-    # TODO: handle error from strtok
     add a0, TBUF, TPOS   # a0 = buffer addr
     mv a1, TLEN          # a1 = buffer size
     call strtok          # a0 = str addr, a1 = str size
-    add TPOS, TPOS, a1   # update TPOS based on str size
+    # TODO: handle error from strtok
+    add TPOS, TPOS, a2   # update TPOS based on strtok bytes consumed
     call tpop_hash       # a0 = str hash
     sw LATEST, 0(HERE)   # write link to prev word (LATEST -> [HERE])
     sw a0, 4(HERE)       # write word name hash (hash -> [HERE + 4])
