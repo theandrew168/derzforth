@@ -35,10 +35,10 @@ pip install bronzebeard stm32loader
 ### Cables
 #### Longan Nano / Wio Lite
 1. Attach the USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8))
-  * Attach TX to RX
-  * Attach RX to TX
-  * Attach GND to GND
-  * Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
+    * Attach TX to RX
+    * Attach RX to TX
+    * Attach GND to GND
+    * Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
 
 ## Build
 With Bronzebeard installed:
