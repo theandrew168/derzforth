@@ -65,7 +65,7 @@ SAVED3 = s11
 
 # jump to "main" since programs execute top to bottom
 # we do this to enable writing helper funcs at the top
-tail main
+j main
 
 
 # Func: rcu_init
@@ -229,6 +229,8 @@ strtok_not_found:
 lookup:
     beqz a0, lookup_not_found  # not found if next word addr is 0 (end of dict)
     lw t0, 4(a0)               # t0 = hash of word name
+    li t1, ~FLAGS_MASK         # t1 = inverted FLAGS_MASK
+    and t0, t0, t1             # ignore flags when comparing hashes
     beq t0, a1, lookup_found   # done if hash (dict) matches hash (lookup)
     lw a0, 0(a0)               # follow link to next word in dict
     j lookup                   # repeat
@@ -378,6 +380,8 @@ tib_init:
     li TLEN, 0    # set TLEN to 0
     li TPOS, 0    # set TPOS to 0
 
+# TODO: ignore single-line comments (backslash til newline)
+# TODO: ignore bounded comments (lparen til rparen)
 # TODO: bounds check on TBUF (error or overwrite last char?)
 interpreter_repl:
     # read and echo a single char
@@ -413,28 +417,6 @@ interpreter_interpret:
     beqz a0, interpreter_ok  # loop back to REPL if input is used up
     add TPOS, TPOS, a2       # update TPOS based on strtok bytes consumed
 
-    mv SAVED0, a0
-    mv SAVED1, a1
-    mv SAVED2, a2
-
-    li a0, USART_BASE_ADDR_0
-    addi t0, a1, '0'
-    addi t1, a2, '0'
-    addi t2, zero, ' '
-
-    mv a1, t0
-    call putc
-    mv a1, t2
-    call putc
-    mv a1, t1
-    call putc
-    mv a1, t2
-    call putc
-
-    mv a0, SAVED0
-    mv a1, SAVED1
-    mv a2, SAVED2
-
     # hash the current token
     call tpop_hash  # a0 = str hash
 
@@ -454,16 +436,17 @@ interpreter_interpret:
     beqz STATE, interpreter_execute  # or if STATE is 0 (execute)
 
 interpreter_compile:
-    sw a0 0(HERE)       # write addr of found word to current definition
+    addi t0, a0, 8      # t0 = addr of word's code field
+    sw t0, 0(HERE)      # write addr of word's code field to current definition
     addi HERE, HERE, 4  # HERE += 4
-    j interpreter_ok
+    j interpreter_interpret
 
 interpreter_execute:
     # setup double-indirect addr back to interpreter loop
     li IP, %position(interpreter_addr_addr, RAM_BASE_ADDR)
-    lw W, 8(a0)  # W = addr of word's code field
-    lw t0, 0(W)  # t0 = addr of word's body
-    jr t0        # execute the word
+    addi W, a0, 8  # W = addr of word's code field
+    lw t0, 0(W)    # t0 = addr of word's body
+    jr t0          # execute the word
 
 
 align 4
@@ -474,16 +457,16 @@ interpreter_addr_addr:
 
 # standard forth routine: next
 next:
-    lw W, 0(IP)
-    addi IP, IP, 4
-    lw t0, 0(W)
+    lw W, 0(IP)     # W <- [IP]
+    addi IP, IP, 4  # IP += 4
+    lw t0, 0(W)     # t0 <- [W]
     jr t0
 
 # standard forth routine: enter
 enter:
-    sw IP, 0(RSP)
-    addi RSP, RSP, 4
-    addi IP, W, 4  # skip code field
+    sw IP, 0(RSP)     # IP -> [RSP]
+    addi RSP, RSP, 4  # RSP += 4
+    addi IP, W, 4     # IP = W + 4 (skip code field)
     j next
 
 
@@ -509,16 +492,23 @@ word_colon:
 code_colon:
     dw %position(body_colon, RAM_BASE_ADDR)
 body_colon:
+    # grab the next token
     add a0, TBUF, TPOS   # a0 = buffer addr
-    mv a1, TLEN          # a1 = buffer size
+    sub a1, TLEN, TPOS   # a1 = buffer size
     call strtok          # a0 = str addr, a1 = str size
-    # TODO: handle error from strtok
+    beqz a0, error       # error and reset if strtok fails
     add TPOS, TPOS, a2   # update TPOS based on strtok bytes consumed
+
+    # hash the current token
     call tpop_hash       # a0 = str hash
+
+    # write the word's link and hash
     sw LATEST, 0(HERE)   # write link to prev word (LATEST -> [HERE])
     sw a0, 4(HERE)       # write word name hash (hash -> [HERE + 4])
     mv LATEST, HERE      # set LATEST = HERE (before HERE gets modified)
     addi HERE, HERE, 8   # move HERE past link and hash (to start of code)
+
+    # set word's code field to "enter"
     li t0, %position(enter, RAM_BASE_ADDR)
     sw t0, 0(HERE)       # write addr of "enter" to word definition
     addi HERE, HERE, 4   # HERE += 4

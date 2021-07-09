@@ -5,19 +5,19 @@ default: build
 
 .PHONY: build
 build: derzforth.asm
-	bronzebeard derzforth.asm -c -o derzforth.bin
+	bronzebeard -c derzforth.asm
 
 .PHONY: build_verbose
 build_verbose: derzforth.asm
-	bronzebeard derzforth.asm -cv -o derzforth.bin
+	bronzebeard -cv derzforth.asm
 
 .PHONY: program_dfu
 program_dfu: build
-	python3 -m bronzebeard.dfu 28e9:0189 derzforth.bin
+	python3 -m bronzebeard.dfu 28e9:0189 bb.out
 
 .PHONY: program_stm32
 program_stm32: build
-	stm32loader -p /dev/cu.usbserial-0001 -ewv derzforth.bin
+	stm32loader -p /dev/cu.usbserial-0001 -ewv bb.out
 
 .PHONY: serial_windows
 serial_windows:
@@ -33,4 +33,4 @@ serial_linux:
 
 .PHONY: clean
 clean:
-	rm -fr *.bin *.out
+	rm -fr *.out

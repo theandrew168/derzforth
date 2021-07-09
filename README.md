@@ -12,9 +12,9 @@ He took inspiration from a [1996 Usenet thread](https://groups.google.com/g/comp
 
 ## Requirements
 The hardware requirements for running DerzForth are very minimal and straightforward:
-* 16k RAM (and RAM_BASE_ADDR)
-* 64k ROM (and ROM_BASE_ADDR)
-* Serial UART (optional, but necessary for interaction)
+* 16k RAM (and a valid `RAM_BASE_ADDR`)
+* 64k ROM (and a valid `ROM_BASE_ADDR`)
+* Serial UART
 
 DerzForth has been tested on the following devices:
 * [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-DEV-Board-p-4725.html)
@@ -27,34 +27,50 @@ The Python docs provide a great [tutorial](https://docs.python.org/3/tutorial/ve
 DerzForth is an assembly program based on the [Bronzebeard](https://github.com/theandrew168/bronzebeard) project.
 Consult Bronzebeard's project page for how to get it all setup (it's pretty easy and works on all major platforms).
 
-Bronzebeard can be installed via pip:
+Bronzebeard (and a simple STM32 serial programmer) can be installed via pip:
 ```
-pip install bronzebeard
+pip install bronzebeard stm32loader
 ```
 
 ### Cables
 #### Longan Nano / Wio Lite
-1. Attach the USB to USB-C cable for programming via DFU
-2. Attach the USB to TTL Serial cable for serial interaction ([adafruit](https://www.adafruit.com/product/954), [sparkfun](https://www.sparkfun.com/products/12977))
-    * Attach GND to GND
-    * Attach TX to RX
-    * Attach RX to TX
-    * Don't attach VCC (or jump to a 5V input if you want power via this cable)
+1. Attach the USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8))
+  * Attach TX to RX
+  * Attach RX to TX
+  * Attach GND to GND
+  * Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
 
 ## Build
 With Bronzebeard installed:
 ```
-# Longan Nano / Wio Lite (GD32VF103CBT6)
-python3 -m bronzebeard.asm derzforth.asm derzforth.bin
+bronzebeard -c derzforth.asm
 ```
 
 ## Program
-Enable DFU mode on your given device:
+Enable boot mode on your given device:
 * **Longan Nano** - press BOOT, press RESET, release RESET, release BOOT
 * **Wio Lite** - set BOOT switch to 1, press and release RESET
 
+Since programming and interaction both utilize serial UART, we can use [pySerial's](https://pyserial.readthedocs.io/en/latest/index.html) built-in terminal to communiate with the device.
+
+To get a list of available serial ports, run the following command:
 ```
-python3 -m bronzebeard.dfu 28e9:0189 derzforth.bin
+python3 -m serial.tools.list_ports
+```
+
+Then, program the device over serial UART:
+```
+stm32loader -p <device_port> -ewv bb.out
+```
+
+Here are some examples:
+```
+# Windows
+stm32loader -p COM3 -ewv bb.out
+# macOS
+stm32loader -p /dev/cu.usbserial-0001 -ewv bb.out
+# Linux
+stm32loader -p /dev/ttyUSB0 -ewv bb.out
 ```
 
 ## Execute
@@ -63,20 +79,12 @@ After programming, put the device back into normal mode:
 * **Wio Lite** - set BOOT switch to 0, press and release RESET
 
 ## Interact
-Since DerzForth includes serial interaction via UART, we can use [pySerial's](https://pyserial.readthedocs.io/en/latest/index.html) built-in terminal to communiate with the device.
-
-To get a list of available serial ports, run the following command:
-```
-python3 -m serial.tools.list_ports
-```
-
-One of them should be the device we want to communicate with.
-You can specify the device port in the following command in order to initiate the connection.
+To interact with the device, the same port as above can used with [pySerial's builtin terminal](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm):
 ```
 python3 -m serial.tools.miniterm <device_port> 115200
 ```
 
-Here are a few potential examples:
+Here are some examples:
 ```
 # Windows
 python3 -m serial.tools.miniterm COM3 115200

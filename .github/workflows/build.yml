@@ -20,4 +20,4 @@ jobs:
         pip install bronzebeard
     - name: Build project
       run: |
-        bronzebeard derzforth.asm --compress
+        bronzebeard -c derzforth.asm
