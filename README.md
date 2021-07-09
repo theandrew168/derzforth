@@ -51,7 +51,7 @@ Enable boot mode on your given device:
 * **Longan Nano** - press BOOT, press RESET, release RESET, release BOOT
 * **Wio Lite** - flip BOOT switch to 1, press and release RESET
 
-Since programming and interaction both utilize serial UART, we can use [pySerial's built-in terminal](https://pyserial.readthedocs.io/en/latest/index.html) to communiate with the device.
+Since programming and interaction both utilize serial UART, we can use [pySerial's built-in terminal](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm) to communiate with the device.
 
 To get a list of available serial ports, run the following command:
 ```
