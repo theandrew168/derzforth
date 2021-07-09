@@ -409,6 +409,7 @@ interpreter_repl_char:
     beq a1, t0, interpreter_interpret  # interpret the input upon newline
     j interpreter_repl
 
+# TODO: allow multiline word defs
 interpreter_interpret:
     # grab the next token
     add a0, TBUF, TPOS       # a0 = buffer addr
