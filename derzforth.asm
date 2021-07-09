@@ -56,6 +56,12 @@ TPOS   = s5  # text buffer current position
 HERE   = s6  # next dict entry addr
 LATEST = s7  # latest dict entry addr
 
+# extra saved regs (use for whatever)
+SAVED0 = s8
+SAVED1 = s9
+SAVED2 = s10
+SAVED3 = s11
+
 
 # jump to "main" since programs execute top to bottom
 # we do this to enable writing helper funcs at the top
@@ -128,6 +134,7 @@ getc:
     andi t0, t0, USART_STAT_RBNE  # isolate read buffer not empty (RBNE) bit
     beqz t0, getc                 # keep looping until ready to recv
     lw a1, USART_DATA_OFFSET(a0)  # load char into a1
+    andi a1, a1, 0xff             # isolate bottom 8 bits
 getc_done:
     ret
 
@@ -140,6 +147,7 @@ putc:
     lw t0, USART_STAT_OFFSET(a0)  # load status into t0
     andi t0, t0, USART_STAT_TBE   # isolate transmit buffer empty (TBE) bit
     beqz t0, putc                 # keep looping until ready to send
+    andi a1, a1, 0xff             # isolate bottom 8 bits
     sw a1, USART_DATA_OFFSET(a0)  # write char from a1
 putc_done:
     ret
@@ -310,7 +318,15 @@ main:
     li HERE, %position(here, RAM_BASE_ADDR)
     li LATEST, %position(latest, RAM_BASE_ADDR)
 
-    j reset
+    # copy program from ROM to RAM
+    li a0, ROM_BASE_ADDR
+    li a1, RAM_BASE_ADDR
+    li a2, %position(here, 0)
+    call memcpy
+
+    # jump to reset (in RAM now)
+    li t0, %position(reset, RAM_BASE_ADDR)
+    jr t0
 
 error:
     li a0, USART_BASE_ADDR_0
@@ -324,10 +340,19 @@ error:
     call putc
 
 reset:
+    # set working reg to zero
     li W, 0
+
+    # set interpreter state reg to 0 (execute)
     li STATE, 0
+
+    # setup data stack ptr
     li DSP, RAM_BASE_ADDR + DATA_STACK_BASE
+
+    # setup return stack ptr
     li RSP, RAM_BASE_ADDR + RETURN_STACK_BASE
+
+    # setup text input buffer addr
     li TIB, RAM_BASE_ADDR + TIB_BASE
 
     j interpreter
@@ -348,24 +373,79 @@ interpreter_ok:
 interpreter:
 
 tib_clear:
-    mv a0, TIB
-    li a1, TIB_SIZE
-    call memclr
+    mv a0, TIB       # a0 = buffer addr
+    li a1, TIB_SIZE  # a1 = buffer size
+    call memclr      # clear out the text input buffer
 
 tib_init:
     mv TBUF, TIB  # set TBUF to TIB
     li TLEN, 0    # set TLEN to 0
     li TPOS, 0    # set TPOS to 0
 
+# TODO: bounds check on TBUF (error or overwrite last char?)
 interpreter_repl:
+    # read and echo a single char
     li a0, USART_BASE_ADDR_0
     call getc
     call putc
+    # check for backspace
+    li t0, '\b'
+    bne a1, t0, interpreter_repl_char
+    beqz TLEN, interpreter_repl  # ignore BS if TLEN is zero
+    # if backspace, dec TLEN and send a space and another backspace
+    #   this simulates clearing the char on the client side
+    addi TLEN, TLEN, -1
+    li a1, ' '
+    call putc
+    li a1, '\b'
+    call putc
+    j interpreter_repl
+
+interpreter_repl_char:
+    add t0, TBUF, TLEN   # t0 = dest addr for this char in TBUF
+    sb a1, 0(t0)         # write char into TBUF
+    addi TLEN, TLEN, 1   # TLEN += 1
+    addi t0, zero, '\n'  # t0 = newline char
+    beq a1, t0, interpreter_interpret  # interpret the input upon newline
     j interpreter_repl
 
 interpreter_interpret:
+    # grab the next token
+    add a0, TBUF, TPOS   # a0 = buffer addr
+    mv a1, TLEN          # a1 = buffer size
+    call strtok          # a0 = str addr, a1 = str size (both 0 if not found)
+    beqz a0, error       # check for error from strtok
+    add TPOS, TPOS, a1   # update TPOS based on str size
+
+    # hash the current token
+    call tpop_hash  # a0 = str hash
+    mv SAVED0, a0   # save hash for later
+
+    # lookup the hash in the word dict
+    mv a1, a0       # a1 = hash of word name
+    mv a0, LATEST   # a0 = addr of latest word
+    call lookup     # a0 = addr of found word (0 if not found)
+    beqz a0, error  # check for error from lookup
+
+    # load and isolated the immediate word flag
+    lw t0, 4(a0)        # load word hash into t0
+    li t1, F_IMMEDIATE  # load immediate flag into t1
+    and t0, t0, t1      # isolate immediate bit in word hash
+
+    # decide whether to compile or execute the word
+    bnez t0, interpreter_execute     # execute if word is immediate...
+    beqz STATE, interpreter_execute  # or if STATE is 0 (execute)
+
 interpreter_compile:
+    # TODO: so
+    j interpreter_ok
+
 interpreter_execute:
+    # setup double-indirect addr back to interpreter loop
+    li IP, %position(interpreter_addr_addr, RAM_BASE_ADDR)
+    lw W, 8(a0)  # W = addr of word's code field
+    lw t0, 0(W)  # t0 = addr of word's body
+    jr t0        # execute the word
 
 align 4
 interpreter_addr:
@@ -399,8 +479,8 @@ word_exit:
 code_exit:
     dw %position(body_exit, RAM_BASE_ADDR)
 body_exit:
-    addi RSP, RSP, -4
-    lw IP, 0(RSP)
+    addi RSP, RSP, -4  # dec return stack ptr
+    lw IP, 0(RSP)      # load next addr into IP
     j next
 
 align 4
@@ -410,16 +490,33 @@ word_colon:
 code_colon:
     dw %position(body_colon, RAM_BASE_ADDR)
 body_colon:
-    # TODO: this is a bigger one
+    # TODO: handle error from strtok
+    add a0, TBUF, TPOS   # a0 = buffer addr
+    mv a1, TLEN          # a1 = buffer size
+    call strtok          # a0 = str addr, a1 = str size
+    add TPOS, TPOS, a1   # update TPOS based on str size
+    call tpop_hash       # a0 = str hash
+    sw LATEST, 0(HERE)   # write link to prev word (LATEST -> [HERE])
+    sw a0, 4(HERE)       # write word name hash (hash -> [HERE + 4])
+    mv LATEST, HERE      # set LATEST = HERE (before HERE gets modified)
+    addi HERE, HERE, 8   # move HERE past link and hash (to start of code)
+    li t0, %position(enter, RAM_BASE_ADDR)
+    sw t0, 0(HERE)       # write addr of "enter" to word definition
+    addi HERE, HERE, 4   # HERE += 4
+    addi STATE, zero, 1  # STATE = 1 (compile)
     j next
 
 align 4
 word_semi:
     dw %position(word_colon, RAM_BASE_ADDR)
-    dw 0x0000003b
+    dw 0x0000003b | F_IMMEDIATE
 code_semi:
     dw %position(body_semi, RAM_BASE_ADDR)
 body_semi:
+    li t0, %position(code_exit, RAM_BASE_ADDR)
+    sw t0, 0(HERE)       # write addr of "code_exit" to word definition
+    addi HERE, HERE, 4   # HERE += 4
+    addi STATE, zero, 0  # STATE = 0 (execute)
     j next
 
 align 4
@@ -429,6 +526,11 @@ word_at:
 code_at:
     dw %position(body_at, RAM_BASE_ADDR)
 body_at:
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw t0, 0(DSP)      # pop addr into t0
+    lw t0, 0(t0)       # load value from addr
+    sw t0, 0(DSP)      # push value onto stack
+    addi DSP, DSP, 4   # inc data stack ptr
     j next
 
 align 4
@@ -438,6 +540,11 @@ word_ex:
 code_ex:
     dw %position(body_ex, RAM_BASE_ADDR)
 body_ex:
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw t0, 0(DSP)      # pop addr into t0
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw t1, 0(DSP)      # pop value into t1
+    sw t1, 0(t0)       # store value at addr
     j next
 
 align 4
@@ -447,6 +554,10 @@ word_spat:
 code_spat:
     dw %position(body_spat, RAM_BASE_ADDR)
 body_spat:
+    mv t0, DSP        # copy next DSP addr
+    addi t0, t0, -4   # dec to reach current DSP addr
+    sw t0 0(DSP)      # push addr onto data stack
+    addi DSP, DSP, 4  # inc data stack ptr
     j next
 
 align 4
@@ -456,6 +567,10 @@ word_rpat:
 code_rpat:
     dw %position(body_rpat, RAM_BASE_ADDR)
 body_rpat:
+    mv t0, RSP        # copy next RSP addr
+    addi t0, t0, -4   # dec to reach current RSP addr
+    sw t0 0(DSP)      # push addr onto data stack
+    addi DSP, DSP, 4  # inc data stack ptr
     j next
 
 align 4
@@ -465,6 +580,14 @@ word_zeroeq:
 code_zeroeq:
     dw %position(body_zeroeq, RAM_BASE_ADDR)
 body_zeroeq:
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw t0, 0(DSP)      # pop value into t0
+    addi t1, zero, 0   # setup initial result as 0
+    bnez t0, notzero   #  0 if not zero
+    addi t1, t1, -1    # -1 if zero 
+notzero:
+    sw t1, 0(DSP)      # push value onto stack
+    addi DSP, DSP, 4   # inc data stack ptr
     j next
 
 align 4
@@ -474,6 +597,13 @@ word_plus:
 code_plus:
     dw %position(body_plus, RAM_BASE_ADDR)
 body_plus:
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw t0, 0(DSP)      # pop first value into t0
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw t1, 0(DSP)      # pop second value into t1
+    add t0, t0, t1     # ADD the values together into t0
+    sw t0, 0(DSP)      # push value onto stack
+    addi DSP, DSP, 4   # inc data stack ptr
     j next
 
 align 4
@@ -483,6 +613,14 @@ word_nand:
 code_nand:
     dw %position(body_nand, RAM_BASE_ADDR)
 body_nand:
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw t0, 0(DSP)      # pop first value into t0
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw t1, 0(DSP)      # pop second value into t1
+    and t0, t0, t1     # AND the values together into t0
+    not t0, t0         # NOT t0 (invert the bits)
+    sw t0, 0(DSP)      # push value onto stack
+    addi DSP, DSP, 4   # inc data stack ptr
     j next
 
 align 4
@@ -492,6 +630,10 @@ word_key:
 code_key:
     dw %position(body_key, RAM_BASE_ADDR)
 body_key:
+    li a0, USART_BASE_ADDR_0  # load USART addr into a0
+    call getc                 # read char into a1
+    sw a1, 0(DSP)             # push char onto stack
+    addi DSP, DSP, 4          # inc data stack ptr
     j next
 
 align 4
@@ -502,6 +644,10 @@ word_emit:
 code_emit:
     dw %position(body_emit, RAM_BASE_ADDR)
 body_emit:
+    li a0, USART_BASE_ADDR_0  # load USART addr into a0
+    addi DSP, DSP, -4         # dec data stack ptr
+    lw a1, 0(DSP)             # pop char into a1
+    call putc                 # emit the char via putc
     j next
 
 align 4
