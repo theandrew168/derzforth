@@ -15,9 +15,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
         pip install wheel
         pip install bronzebeard
     - name: Build project
       run: |
-        bronzebeard -c derzforth.asm
+        bronzebeard -c --include-chips derzforth.asm
