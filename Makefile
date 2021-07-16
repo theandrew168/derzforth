@@ -5,11 +5,11 @@ default: build
 
 .PHONY: build
 build: derzforth.asm
-	bronzebeard -c derzforth.asm
+	bronzebeard -c --include-chips derzforth.asm
 
 .PHONY: build_verbose
 build_verbose: derzforth.asm
-	bronzebeard -cv derzforth.asm
+	bronzebeard -cv --include-chips derzforth.asm
 
 .PHONY: program_dfu
 program_dfu: build

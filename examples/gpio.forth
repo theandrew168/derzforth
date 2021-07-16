@@ -43,11 +43,11 @@
 : GPIO_CTL_OUT_ALT_PUSH_PULL 0b10 ;
 : GPIO_CTL_OUT_ALT_OPEN_DRAIN 0b11 ;
 
-: rled
-    GPIO_C_ADDR GPIO_CTL1_OFFSET + @                     \ load current control
-    0b1111                                               \ setup mask for config pins
-    256* 256* 16* invert and                             \ shift over and clear existing config for pin 13
-    GPIO_CTL_OUT_PUSH_PULL 2* 2* GPIO_MODE_OUT_50MHZ or  \ setup GPIO CTL and MODE
-    256* 256* 16* or                                     \ shift over and set new config for pin 13
-    GPIO_C_ADDR GPIO_CTL1_OFFSET + !                     \ store new control
-;
+\: rled
+\    GPIO_C_ADDR GPIO_CTL1_OFFSET + @                     \ load current control
+\    0b1111                                               \ setup mask for config pins
+\    256* 256* 16* invert and                             \ shift over and clear existing config for pin 13
+\    GPIO_CTL_OUT_PUSH_PULL 2* 2* GPIO_MODE_OUT_50MHZ or  \ setup GPIO CTL and MODE
+\    256* 256* 16* or                                     \ shift over and set new config for pin 13
+\    GPIO_C_ADDR GPIO_CTL1_OFFSET + !                     \ store new control
+\;

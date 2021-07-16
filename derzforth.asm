@@ -1,39 +1,43 @@
-include gd32vf103.asm
+# include definitions related to the GigaDevice GD32VF103 chip
+# passing the --include-chips flag to bronzebeard puts this on the path
+include GD32VF103.asm
 
 #  16KB      Memory Map
 # 0x0000 |----------------|
 #        |                |
-#        |  Interpreter   |
-#        |       +        | 7K
+#        |                |
+#        |                |
+#        |   Interpreter  |
+#        |       +        | 12KB
 #        |   Dictionary   |
 #        |                |
-# 0x1c00 |----------------|
-#        |      TIB       | 1K
-# 0x2000 |----------------|
 #        |                |
-#        |   Data Stack   | 4K
 #        |                |
 # 0x3000 |----------------|
+#        |      TIB       | 1KB
+# 0x3400 |----------------|
+#        |  Return Stack  | 1KB (256 calls deep)
+# 0x3800 |----------------|
 #        |                |
-#        |  Return Stack  | 4K
+#        |   Data Stack   | 2KB (512 elements)
 #        |                |
-# 0x3FFF |----------------|
+# 0x4000 |----------------|
 
 ROM_BASE_ADDR = 0x08000000
 RAM_BASE_ADDR = 0x20000000
 
-INTERPRETER_BASE  = 0x0000
-TIB_BASE          = 0x1c00
-DATA_STACK_BASE   = 0x2000
-RETURN_STACK_BASE = 0x3000
+INTERPRETER_BASE_ADDR  = 0x0000
+TIB_BASE_ADDR          = 0x3000
+RETURN_STACK_BASE_ADDR = 0x3400
+DATA_STACK_BASE_ADDR   = 0x3800
 
-INTERPRETER_SIZE  = 0x1c00  # 7K
-TIB_SIZE          = 0x0400  # 1K
-DATA_STACK_SIZE   = 0x1000  # 4K
-RETURN_STACK_SIZE = 0x1000  # 4K
+INTERPRETER_SIZE  = 0x3000  # 12KB
+TIB_SIZE          = 0x0400  # 1KB
+RETURN_STACK_SIZE = 0x0400  # 1KB
+DATA_STACK_SIZE   = 0x0800  # 2KB
 
 # serial config
-CLOCK_FREQ = 8000000  # default GD32BF103 clock freq
+CLOCK_FREQ = 8000000  # default GD32VF103 clock freq
 USART_BAUD = 115200   # desired USART baud rate
 
 # word flags (top 2 bits of hash)
@@ -120,7 +124,7 @@ usart_init:
     # store clkdiv
     sw a1, USART_BAUD_OFFSET(a0)
     # enable USART (enable RX, enable TX, enable USART)
-    li t0, USART_CTL0_REN | USART_CTL0_TEN | USART_CTL0_UEN
+    li t0, USART_CTL0_UEN | USART_CTL0_TEN | USART_CTL0_REN
     sw t0, USART_CTL0_OFFSET(a0)
 usart_init_done:
     ret
@@ -292,24 +296,24 @@ perl_hash_done:
 main:
     # enable RCU (AFIO, GPIO port A, and USART0)
     li a0, RCU_BASE_ADDR
-    li a1, RCU_APB2EN_AFEN | RCU_APB2EN_PAEN | RCU_APB2EN_USART0EN
+    li a1, RCU_APB2EN_USART0EN | RCU_APB2EN_PAEN | RCU_APB2EN_AFEN
     call rcu_init
 
     # enable TX pin
     li a0, GPIO_BASE_ADDR_A
     li a1, 9
-    li a2, (GPIO_CTL_OUT_ALT_PUSH_PULL << 2 | GPIO_MODE_OUT_50MHZ)
+    li a2, GPIO_CONFIG_AF_PP_50MHZ
     call gpio_init
 
     # enable RX pin
     li a0, GPIO_BASE_ADDR_A
     li a1, 10
-    li a2, (GPIO_CTL_IN_FLOATING << 2 | GPIO_MODE_IN)
+    li a2, GPIO_CONFIG_IN_FLOAT
     call gpio_init
 
     # enable USART0
     li a0, USART_BASE_ADDR_0
-    li a1, (CLOCK_FREQ // USART_BAUD)
+    li a1, CLOCK_FREQ // USART_BAUD
     call usart_init
 
     # setup HERE and LATEST vars (will be in RAM)
@@ -345,13 +349,13 @@ reset:
     li STATE, 0
 
     # setup data stack ptr
-    li DSP, RAM_BASE_ADDR + DATA_STACK_BASE
+    li DSP, RAM_BASE_ADDR + DATA_STACK_BASE_ADDR
 
     # setup return stack ptr
-    li RSP, RAM_BASE_ADDR + RETURN_STACK_BASE
+    li RSP, RAM_BASE_ADDR + RETURN_STACK_BASE_ADDR
 
     # setup text input buffer addr
-    li TIB, RAM_BASE_ADDR + TIB_BASE
+    li TIB, RAM_BASE_ADDR + TIB_BASE_ADDR
 
     j interpreter
 

@@ -28,4 +28,4 @@
 : rcu_enable RCU_BASE_ADDR RCU_APB2EN_OFFSET + ! ;
 
 \ enable RCU for GPIO ports A and C
-RCU_GPIO_A_BIT RCU_GPIO_C_BIT or rcu_enable
+\RCU_GPIO_A_BIT RCU_GPIO_C_BIT or rcu_enable
