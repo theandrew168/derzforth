@@ -39,6 +39,10 @@ serial_windows:
 serial_macos:
 	python3 -m serial.tools.miniterm /dev/cu.usbserial-0001 115200
 
+.PHONY: serial_macos_hifive
+serial_macos_hifive:
+	python3 -m serial.tools.miniterm /dev/cu.usbmodem0009790147671 115200
+
 .PHONY: serial_linux
 serial_linux:
 	python3 -m serial.tools.miniterm /dev/ttyUSB0 115200

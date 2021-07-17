@@ -105,6 +105,13 @@ stm32loader -p /dev/cu.usbserial-0001 -ewv bb.out
 stm32loader -p /dev/ttyUSB0 -ewv bb.out
 ```
 
+### FE310-G002 Boards
+After converting the output binary to [Intel HEX](https://en.wikipedia.org/wiki/Intel_HEX) format, Segger J-Link handles the rest:
+```
+bin2hex.py --offset 0x20010000 bb.out bb.hex
+JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1 scripts/hifive1_rev_b.jlink
+```
+
 ## Execute
 
 ### GD32VF103 Boards
@@ -112,6 +119,9 @@ After programming, put the device back into normal mode:
 * **Longan Nano** - press and release RESET
 * **Wio Lite** - flip BOOT switch to 0, press and release RESET
 * **GD32 Dev Board** - TODO how does this board work?
+
+### FE310-G002 Boards
+The J-Link command from the previous step will automatically reset the chip after programming!
 
 ## Interact
 To interact with the device, the same port as above can used with [pySerial's builtin terminal](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm):
@@ -125,6 +135,8 @@ Here are some examples:
 python3 -m serial.tools.miniterm COM3 115200
 # macOS
 python3 -m serial.tools.miniterm /dev/cu.usbserial-0001 115200
+# macOS (J-Link Serial over USB)
+python3 -m serial.tools.miniterm /dev/cu.usbmodem0009790147671 115200
 # Linux
 python3 -m serial.tools.miniterm /dev/ttyUSB0 115200
 ```
