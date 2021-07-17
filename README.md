@@ -19,7 +19,8 @@ The hardware requirements for running DerzForth are minimal and straightforward:
 DerzForth has been tested on the following RISC-V development boards:
 * [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-DEV-Board-p-4725.html)
 * [Wio Lite](https://www.seeedstudio.com/Wio-Lite-RISC-V-GD32VF103-p-4293.html)
-* [HiFive1 Rev B](https://www.sifive.com/boards/hifive1-rev-b)
+* [GD32 Dev Board](https://www.seeedstudio.com/SeeedStudio-GD32-RISC-V-kit-with-LCD-p-4303.html)
+* **WIP** [HiFive1 Rev B](https://www.sifive.com/boards/hifive1-rev-b)
 
 ## Setup
 If you are unfamiliar with [virtual environments](https://docs.python.org/3/library/venv.html), I suggest taking a brief moment to learn about them and set one up.
@@ -53,6 +54,14 @@ For this board, the only setup necessary is a USB to UART cable.
 * Attach GND to GND
 * Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
 
+#### GD32 Dev Board
+For this board, the only setup necessary is a USB to UART cable.
+
+* Attach TX to pin PA10
+* Attach RX to pin PA9
+* Attach GND to GND
+* Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
+
 #### HiFive1 Rev B
 Programming this board requires [Segger's J-Link software](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack).
 These tools work on all major platforms but depend on [Java](https://openjdk.java.net/install/).
@@ -64,13 +73,17 @@ As far as cables go, just a single USB to Micro-USB cable is necessary.
 ## Build
 With Bronzebeard installed:
 ```
-bronzebeard -c derzforth.asm
+bronzebeard -c -i boards/<target_board>/ --include-chips derzforth.asm
 ```
 
 ## Program
+Some boards share a common method of programming and interacting.
+
+### GD32VF103 Boards
 Enable boot mode on your given device:
 * **Longan Nano** - press BOOT, press RESET, release RESET, release BOOT
 * **Wio Lite** - flip BOOT switch to 1, press and release RESET
+* **GD32 Dev Board** - TODO how does this board work?
 
 To get a list of available serial ports, run the following command:
 ```
@@ -93,9 +106,12 @@ stm32loader -p /dev/ttyUSB0 -ewv bb.out
 ```
 
 ## Execute
+
+### GD32VF103 Boards
 After programming, put the device back into normal mode:
 * **Longan Nano** - press and release RESET
 * **Wio Lite** - flip BOOT switch to 0, press and release RESET
+* **GD32 Dev Board** - TODO how does this board work?
 
 ## Interact
 To interact with the device, the same port as above can used with [pySerial's builtin terminal](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm):
