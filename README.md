@@ -11,14 +11,15 @@ This implementation's general structure is based on [Sectorforth](https://github
 He took inspiration from a [1996 Usenet thread](https://groups.google.com/g/comp.lang.forth/c/NS2icrCj1jQ/m/ohh9v4KphygJ) wherein folks discussed requirements for a minimal yet fully functional Forth implementation.
 
 ## Requirements
-The hardware requirements for running DerzForth are very minimal and straightforward:
-* at least 16KB of RAM (define `RAM_BASE_ADDR` and `RAM_SIZE`)
-* at least 16KB of ROM (define `ROM_BASE_ADDR` and `ROM_SIZE`)
+The hardware requirements for running DerzForth are minimal and straightforward:
+* At least 16KB of RAM (define `RAM_BASE_ADDR` and `RAM_SIZE`)
+* At least 16KB of ROM (define `ROM_BASE_ADDR` and `ROM_SIZE`)
 * Serial UART (implement `serial_init`, `serial_getc`, and `serial_putc`)
 
-DerzForth has been tested on the following devices:
+DerzForth has been tested on the following RISC-V development boards:
 * [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-DEV-Board-p-4725.html)
 * [Wio Lite](https://www.seeedstudio.com/Wio-Lite-RISC-V-GD32VF103-p-4293.html)
+* [HiFive1 Rev B](https://www.sifive.com/boards/hifive1-rev-b)
 
 ## Setup
 If you are unfamiliar with [virtual environments](https://docs.python.org/3/library/venv.html), I suggest taking a brief moment to learn about them and set one up.
@@ -32,13 +33,13 @@ Bronzebeard (and a few other tools) can be installed via pip:
 pip install -r requirements.txt
 ```
 
-### Cable Setup
+### Devices
 
 #### Longan Nano
 For this device, the only cable necessary is a USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8)).
 
-* Attach TX to pin R0
-* Attach RX to pin T0
+* Attach TX to pin R0 (PA10)
+* Attach RX to pin T0 (PA9)
 * Attach GND to pin GND
 * Attach 3.3V to pin 3V3 (be sure not to supply 5V to 3.3V or vice versa)
 
@@ -49,6 +50,9 @@ For this device, the only cable necessary is a USB to UART Bridge (I recommend t
 * Attach RX to pin PA9
 * Attach GND to GND
 * Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
+
+#### HiFive1 Rev B
+Install Segger JLink software from their website (works on all major platforms but requires Java).
 
 ## Build
 With Bronzebeard installed:
