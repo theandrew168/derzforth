@@ -19,6 +19,6 @@ jobs:
         pip install bronzebeard
     - name: Build project for each board
       run: |
-        bronzebeard -c -i boards/longan_nano/ --include-chips derzforth.asm
-        bronzebeard -c -i boards/wio_lite/ --include-chips derzforth.asm
-        bronzebeard -c -i boards/hifive1_rev_b/ --include-chips derzforth.asm
+        bronzebeard -c -i boards/longan_nano/ --include-definitions derzforth.asm
+        bronzebeard -c -i boards/wio_lite/ --include-definitions derzforth.asm
+        bronzebeard -c -i boards/hifive1_rev_b/ --include-definitions derzforth.asm
