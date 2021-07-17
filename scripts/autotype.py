@@ -20,7 +20,6 @@ def cli_main():
     lines = [line for line in lines if not line.startswith('\\')]
     lines = [line for line in lines if len(line.strip()) > 0]
 
-    print(len(lines))
     with serial.Serial(args.port, args.baud, timeout=0.01) as ser:
         for line in lines:
             ser.write(line.encode())

@@ -12,9 +12,9 @@ He took inspiration from a [1996 Usenet thread](https://groups.google.com/g/comp
 
 ## Requirements
 The hardware requirements for running DerzForth are very minimal and straightforward:
-* 16k RAM (and a valid `RAM_BASE_ADDR`)
-* 64k ROM (and a valid `ROM_BASE_ADDR`)
-* Serial UART
+* at least 16KB of RAM (define `RAM_BASE_ADDR` and `RAM_SIZE`)
+* at least 16KB of ROM (define `ROM_BASE_ADDR` and `ROM_SIZE`)
+* Serial UART (implement `serial_init`, `serial_getc`, and `serial_putc`)
 
 DerzForth has been tested on the following devices:
 * [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-DEV-Board-p-4725.html)
@@ -27,18 +27,28 @@ The Python docs provide a great [tutorial](https://docs.python.org/3/tutorial/ve
 DerzForth is an assembly program based on the [Bronzebeard](https://github.com/theandrew168/bronzebeard) project.
 Consult Bronzebeard's project page for how to get it all setup (it's pretty easy and works on all major platforms).
 
-Bronzebeard (and a simple STM32 serial programmer) can be installed via pip:
+Bronzebeard (and a few other tools) can be installed via pip:
 ```
-pip install bronzebeard stm32loader
+pip install -r requirements.txt
 ```
 
-### Cables
-#### Longan Nano / Wio Lite
-1. Attach a USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8))
-    * Attach TX to RX
-    * Attach RX to TX
-    * Attach GND to GND
-    * Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
+### Cable Setup
+
+#### Longan Nano
+For this device, the only cable necessary is a USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8)).
+
+* Attach TX to pin R0
+* Attach RX to pin T0
+* Attach GND to pin GND
+* Attach 3.3V to pin 3V3 (be sure not to supply 5V to 3.3V or vice versa)
+
+#### Wio Lite
+For this device, the only cable necessary is a USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8)).
+
+* Attach TX to pin PA10
+* Attach RX to pin PA9
+* Attach GND to GND
+* Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
 
 ## Build
 With Bronzebeard installed:

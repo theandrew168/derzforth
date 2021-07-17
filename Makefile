@@ -1,23 +1,35 @@
 .POSIX:
 .SUFFIXES:
 
-default: build
+default: build_longan_nano
 
-.PHONY: build
-build: derzforth.asm
-	bronzebeard -c --include-chips derzforth.asm
 
-.PHONY: build_verbose
-build_verbose: derzforth.asm
-	bronzebeard -cv --include-chips derzforth.asm
+.PHONY: build_longan_nano
+build_longan_nano: derzforth.asm
+	bronzebeard -c -i boards/longan_nano/ --include-chips derzforth.asm
+
+.PHONY: build_wio_lite
+build_wio_lite: derzforth.asm
+	bronzebeard -c -i boards/wio_lite/ --include-chips derzforth.asm
+
+.PHONY: build_hifive1_rev_b
+build_hifive1_rev_b: derzforth.asm
+	bronzebeard -c -i boards/hifive1_rev_b/ --include-chips derzforth.asm
+
 
 .PHONY: program_dfu
-program_dfu: build
+program_dfu:
 	python3 -m bronzebeard.dfu 28e9:0189 bb.out
 
 .PHONY: program_stm32
-program_stm32: build
+program_stm32:
 	stm32loader -p /dev/cu.usbserial-0001 -ewv bb.out
+
+.PHONY: program_jlink
+program_jlink:
+	bin2hex.py --offset 0x20010000 bb.out bb.hex
+	JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1 scripts/upload.jlink
+
 
 .PHONY: serial_windows
 serial_windows:
@@ -31,6 +43,7 @@ serial_macos:
 serial_linux:
 	python3 -m serial.tools.miniterm /dev/ttyUSB0 115200
 
+
 .PHONY: clean
 clean:
-	rm -fr *.out
+	rm -fr *.bin *.hex *.out

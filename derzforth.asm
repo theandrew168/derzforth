@@ -1,6 +1,22 @@
-# include definitions related to the GigaDevice GD32VF103 chip
-# passing the --include-chips flag to bronzebeard puts this on the path
-include GD32VF103.asm
+# jump to "main" since programs execute top to bottom
+# we do this to enable writing helper funcs at the top
+tail main
+
+# pull in the necessary defs / funcs for a given board
+#  (based on the assembler's search path)
+#
+# this file should define:
+#   RAM_BASE_ADDR
+#   RAM_SIZE
+#   ROM_BASE_ADDR
+#   ROM_SIZE
+#
+# and implement:
+#   serial_init(a0: baud_rate)
+#   serial_getc() -> a0: char
+#   serial_putc(a0: char)
+include board.asm
+
 
 #  16KB      Memory Map
 # 0x0000 |----------------|
@@ -23,9 +39,6 @@ include GD32VF103.asm
 #        |                |
 # 0x4000 |----------------|
 
-ROM_BASE_ADDR = 0x08000000
-RAM_BASE_ADDR = 0x20000000
-
 INTERPRETER_BASE_ADDR  = 0x0000
 TIB_BASE_ADDR          = 0x3000
 RETURN_STACK_BASE_ADDR = 0x3400
@@ -36,9 +49,7 @@ TIB_SIZE          = 0x0400  # 1KB
 RETURN_STACK_SIZE = 0x0400  # 1KB
 DATA_STACK_SIZE   = 0x0800  # 2KB
 
-# serial config
-CLOCK_FREQ = 8000000  # default GD32VF103 clock freq
-USART_BAUD = 115200   # desired USART baud rate
+SERIAL_BAUD_RATE = 115200
 
 # word flags (top 2 bits of hash)
 FLAGS_MASK  = 0xc0000000
@@ -65,96 +76,6 @@ SAVED0 = s8
 SAVED1 = s9
 SAVED2 = s10
 SAVED3 = s11
-
-
-# jump to "main" since programs execute top to bottom
-# we do this to enable writing helper funcs at the top
-j main
-
-
-# Func: rcu_init
-# Arg: a0 = RCU base addr
-# Arg: a1 = RCU config
-# Ret: none
-rcu_init:
-    # store config
-    sw a1, RCU_APB2EN_OFFSET(a0)
-rcu_init_done:
-    ret
-
-
-# Func: gpio_init
-# Arg: a0 = GPIO port base addr
-# Arg: a1 = GPIO pin number
-# Arg: a2 = GPIO config (4 bits)
-# Ret: none
-gpio_init:
-    # advance to CTL0
-    addi t0, a0, GPIO_CTL0_OFFSET
-    # if pin number is less than 8, CTL0 is correct
-    slti t1, a1, 8
-    bnez t1, gpio_init_config
-    # else we need CTL1 and then subtract 8 from the pin number
-    addi t0, t0, 4
-    addi a1, a1, -8
-gpio_init_config:
-    # multiply pin number by 4 to get shift amount
-    slli a1, a1, 2
-    # load current config
-    lw t1, 0(t0)
-    # align and clear existing pin config
-    li t2, 0b1111
-    sll t2, t2, a1
-    not t2, t2
-    and t1, t1, t2
-    # align and apply new pin config
-    sll a2, a2, a1
-    or t1, t1, a2
-    # store updated config
-    sw t1, 0(t0)
-gpio_init_done:
-    ret
-
-
-# Func: usart_init
-# Arg: a0 = USART base addr
-# Arg: a1 = USART clkdiv
-# Ret: none
-usart_init:
-    # store clkdiv
-    sw a1, USART_BAUD_OFFSET(a0)
-    # enable USART (enable RX, enable TX, enable USART)
-    li t0, USART_CTL0_UEN | USART_CTL0_TEN | USART_CTL0_REN
-    sw t0, USART_CTL0_OFFSET(a0)
-usart_init_done:
-    ret
-
-
-# Func: getc
-# Arg: a0 = USART base addr
-# Ret: a1 = character received (a1 here for simpler getc + putc loops)
-getc:
-    lw t0, USART_STAT_OFFSET(a0)  # load status into t0
-    andi t0, t0, USART_STAT_RBNE  # isolate read buffer not empty (RBNE) bit
-    beqz t0, getc                 # keep looping until ready to recv
-    lw a1, USART_DATA_OFFSET(a0)  # load char into a1
-    andi a1, a1, 0xff             # isolate bottom 8 bits
-getc_done:
-    ret
-
-
-# Func: putc
-# Arg: a0 = USART base addr
-# Arg: a1 = character to send
-# Ret: none
-putc:
-    lw t0, USART_STAT_OFFSET(a0)  # load status into t0
-    andi t0, t0, USART_STAT_TBE   # isolate transmit buffer empty (TBE) bit
-    beqz t0, putc                 # keep looping until ready to send
-    andi a1, a1, 0xff             # isolate bottom 8 bits
-    sw a1, USART_DATA_OFFSET(a0)  # write char from a1
-putc_done:
-    ret
 
 
 # Func: memclr
@@ -239,7 +160,8 @@ lookup:
     lw a0, 0(a0)               # follow link to next word in dict
     j lookup                   # repeat
 lookup_found:
-    ret  # a0 is already pointing at the current dict entry
+    # a0 is already pointing at the current dict entry
+    ret
 lookup_not_found:
     addi a0, zero, 0           # a0 = 0 (not found)
     ret
@@ -294,27 +216,8 @@ perl_hash_done:
 ###
 
 main:
-    # enable RCU (AFIO, GPIO port A, and USART0)
-    li a0, RCU_BASE_ADDR
-    li a1, RCU_APB2EN_USART0EN | RCU_APB2EN_PAEN | RCU_APB2EN_AFEN
-    call rcu_init
-
-    # enable TX pin
-    li a0, GPIO_BASE_ADDR_A
-    li a1, 9
-    li a2, GPIO_CONFIG_AF_PP_50MHZ
-    call gpio_init
-
-    # enable RX pin
-    li a0, GPIO_BASE_ADDR_A
-    li a1, 10
-    li a2, GPIO_CONFIG_IN_FLOAT
-    call gpio_init
-
-    # enable USART0
-    li a0, USART_BASE_ADDR_0
-    li a1, CLOCK_FREQ // USART_BAUD
-    call usart_init
+    li a0, SERIAL_BAUD_RATE
+    call serial_init
 
     # setup HERE and LATEST vars (will be in RAM)
     li HERE, %position(here, RAM_BASE_ADDR)
@@ -331,15 +234,13 @@ main:
     jr t0
 
 error:
-    li a0, USART_BASE_ADDR_0
-
     # print " ?" and fall into reset
-    li a1, ' '
-    call putc
-    li a1, '?'
-    call putc
-    li a1, '\n'
-    call putc
+    li a0, ' '
+    call serial_putc
+    li a0, '?'
+    call serial_putc
+    li a0, '\n'
+    call serial_putc
 
 reset:
     # set working reg to zero
@@ -360,17 +261,15 @@ reset:
     j interpreter
 
 interpreter_ok:
-    li a0, USART_BASE_ADDR_0
-
     # print "ok" and fall into interpreter
-    li a1, ' '
-    call putc
-    li a1, 'o'
-    call putc
-    li a1, 'k'
-    call putc
-    li a1, '\n'
-    call putc
+    li a0, ' '
+    call serial_putc
+    li a0, 'o'
+    call serial_putc
+    li a0, 'k'
+    call serial_putc
+    li a0, '\n'
+    call serial_putc
 
 interpreter:
 
@@ -389,28 +288,30 @@ tib_init:
 # TODO: bounds check on TBUF (error or overwrite last char?)
 interpreter_repl:
     # read and echo a single char
-    li a0, USART_BASE_ADDR_0
-    call getc
-    call putc
+    call serial_getc
+    call serial_putc
+
     # check for backspace
     li t0, '\b'
-    bne a1, t0, interpreter_repl_char
+    bne a0, t0, interpreter_repl_char
     beqz TLEN, interpreter_repl  # ignore BS if TLEN is zero
+
     # if backspace, dec TLEN and send a space and another backspace
     #   this simulates clearing the char on the client side
     addi TLEN, TLEN, -1
-    li a1, ' '
-    call putc
-    li a1, '\b'
-    call putc
+    li a0, ' '
+    call serial_putc
+    li a0, '\b'
+    call serial_putc
+
     j interpreter_repl
 
 interpreter_repl_char:
     add t0, TBUF, TLEN   # t0 = dest addr for this char in TBUF
-    sb a1, 0(t0)         # write char into TBUF
+    sb a0, 0(t0)         # write char into TBUF
     addi TLEN, TLEN, 1   # TLEN += 1
     addi t0, zero, '\n'  # t0 = newline char
-    beq a1, t0, interpreter_interpret  # interpret the input upon newline
+    beq a0, t0, interpreter_interpret  # interpret the input upon newline
     j interpreter_repl
 
 # TODO: allow multiline word defs
@@ -644,10 +545,9 @@ word_key:
 code_key:
     dw %position(body_key, RAM_BASE_ADDR)
 body_key:
-    li a0, USART_BASE_ADDR_0  # load USART addr into a0
-    call getc                 # read char into a1
-    sw a1, 0(DSP)             # push char onto stack
-    addi DSP, DSP, 4          # inc data stack ptr
+    call serial_getc  # read char into a0 via serial_getc
+    sw a0, 0(DSP)     # push char onto stack
+    addi DSP, DSP, 4  # inc data stack ptr
     j next
 
 align 4
@@ -658,10 +558,9 @@ word_emit:
 code_emit:
     dw %position(body_emit, RAM_BASE_ADDR)
 body_emit:
-    li a0, USART_BASE_ADDR_0  # load USART addr into a0
-    addi DSP, DSP, -4         # dec data stack ptr
-    lw a1, 0(DSP)             # pop char into a1
-    call putc                 # emit the char via putc
+    addi DSP, DSP, -4  # dec data stack ptr
+    lw a0, 0(DSP)      # pop char into a1
+    call serial_putc   # emit the char via serial_putc
     j next
 
 align 4
