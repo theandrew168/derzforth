@@ -157,27 +157,3 @@ This minimal selection of primitive words is used to bootstrap the Forth system.
 | `nand` | ( x y -- z )  | NAND the two numbers at the top of the stack  |
 | `key`  | ( -- x )      | Read ASCII character from serial input        |
 | `emit` | ( x -- )      | Write ASCII character to serial output        |
-
-## FAQ
-### Is this project ready to use? Does it work?
-As far as simple Forth implementations go, it does work!
-It's just so minimal at this point that it's sort of hard to tell.
-By default, it only supports the bare minimum builtin words as documented above.
-In order to build up the dictionary into something useful, it is necessary to enter most of the commands from [prelude.forth](https://github.com/theandrew168/derzforth/blob/main/prelude.forth).
-If you then go on and manually type all the commands in from both [rcu.forth](https://github.com/theandrew168/derzforth/blob/main/rcu.forth) and [gpio.forth](https://github.com/theandrew168/derzforth/blob/main/gpio.forth), you'll be equipped with the word "rled" which turns on the red LED.
-I made a quick [demo video](https://www.youtube.com/watch?v=7Q1TXs5Ff9M) for this example.
-
-Obviously, this is an obnoxious amount of manual and tedious typing.
-Surely there is a better way!
-In the past, I actually hard-coded all three of these "dictionaries" into the binary and interpreted them on startup.
-However, this quickly bloated the binary and started adding complexity to address linking and resolution.
-In the future I'll need to make the assembler smart enough to handle short / long jumps properly.
-
-Since baking these word definitions into the binary didn't really scale, I needed to find a better option.
-Next on my TODO list for this project is to get the SD card working (at least for reads) over SPI.
-That way I could store all of these words there and load them easily at runtime.
-I really want to implement a simple LOAD / EDIT system as described in [chapter 3 of "Starting Forth"](https://www.forth.com/starting-forth/3-forth-editor-blocks-buffer/) by Leo Brodie.
-
-I'm pretty happy with where this Forth interpreter is but it definitely has a ways to go before I'd call it "useful".
-Most of the design is based on Cesar Blum's [sectorforth](https://github.com/cesarblum/sectorforth) project.
-His design is based on an [old Usenet thread](https://groups.google.com/g/comp.lang.forth/c/NS2icrCj1jQ) wherein some folks discussed the smallest number of initial builtin words that could be used to bootstrap a full Forth environment.
