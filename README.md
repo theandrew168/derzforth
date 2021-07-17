@@ -52,7 +52,7 @@ For this board, the only setup necessary is a USB to UART cable.
 * Attach TX to pin PA10
 * Attach RX to pin PA9
 * Attach GND to GND
-* Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
+* Attach 3.3V to 3V3 (be sure not to supply 5V to 3.3V or vice versa)
 
 #### GD32 Dev Board
 For this board, the only setup necessary is a USB to UART cable.
@@ -60,7 +60,7 @@ For this board, the only setup necessary is a USB to UART cable.
 * Attach TX to pin PA10
 * Attach RX to pin PA9
 * Attach GND to GND
-* Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
+* Attach 3.3V to 3V3 (be sure not to supply 5V to 3.3V or vice versa)
 
 #### HiFive1 Rev B
 Programming this board requires [Segger's J-Link software](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack).
