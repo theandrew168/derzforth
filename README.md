@@ -33,10 +33,12 @@ Bronzebeard (and a few other tools) can be installed via pip:
 pip install -r requirements.txt
 ```
 
-### Devices
+### Boards
+Some boards require a USB to UART cable in order to program and/or interact.
+I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8).
 
 #### Longan Nano
-For this device, the only cable necessary is a USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8)).
+For this board, the only setup necessary is a USB to UART cable.
 
 * Attach TX to pin R0 (PA10)
 * Attach RX to pin T0 (PA9)
@@ -44,7 +46,7 @@ For this device, the only cable necessary is a USB to UART Bridge (I recommend t
 * Attach 3.3V to pin 3V3 (be sure not to supply 5V to 3.3V or vice versa)
 
 #### Wio Lite
-For this device, the only cable necessary is a USB to UART Bridge (I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8)).
+For this board, the only setup necessary is a USB to UART cable.
 
 * Attach TX to pin PA10
 * Attach RX to pin PA9
@@ -52,7 +54,12 @@ For this device, the only cable necessary is a USB to UART Bridge (I recommend t
 * Attach 3.3V to 3.3V (be sure not to supply 5V to 3.3V or vice versa)
 
 #### HiFive1 Rev B
-Install Segger JLink software from their website (works on all major platforms but requires Java).
+Programming this board requires [Segger's J-Link software](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack).
+These tools work on all major platforms but depend on [Java](https://openjdk.java.net/install/).
+
+As far as cables go, just a single USB to Micro-USB cable is necessary.
+
+* Plug the Micro-USB cable into the Micro-USB port
 
 ## Build
 With Bronzebeard installed:
