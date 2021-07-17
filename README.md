@@ -20,7 +20,7 @@ DerzForth has been tested on the following RISC-V development boards:
 * [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-DEV-Board-p-4725.html)
 * [Wio Lite](https://www.seeedstudio.com/Wio-Lite-RISC-V-GD32VF103-p-4293.html)
 * [GD32 Dev Board](https://www.seeedstudio.com/SeeedStudio-GD32-RISC-V-kit-with-LCD-p-4303.html)
-* **WIP** [HiFive1 Rev B](https://www.sifive.com/boards/hifive1-rev-b)
+* [HiFive1 Rev B](https://www.sifive.com/boards/hifive1-rev-b)
 
 ## Setup
 If you are unfamiliar with [virtual environments](https://docs.python.org/3/library/venv.html), I suggest taking a brief moment to learn about them and set one up.
