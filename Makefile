@@ -6,15 +6,15 @@ default: build_longan_nano
 
 .PHONY: build_longan_nano
 build_longan_nano: derzforth.asm
-	bronzebeard -c -i boards/longan_nano/ --include-chips derzforth.asm
+	bronzebeard -c -i boards/longan_nano/ --include-definitions derzforth.asm
 
 .PHONY: build_wio_lite
 build_wio_lite: derzforth.asm
-	bronzebeard -c -i boards/wio_lite/ --include-chips derzforth.asm
+	bronzebeard -c -i boards/wio_lite/ --include-definitions derzforth.asm
 
 .PHONY: build_hifive1_rev_b
 build_hifive1_rev_b: derzforth.asm
-	bronzebeard -c -i boards/hifive1_rev_b/ --include-chips derzforth.asm
+	bronzebeard -c -i boards/hifive1_rev_b/ --include-definitions derzforth.asm
 
 
 .PHONY: program_dfu
@@ -28,7 +28,7 @@ program_stm32:
 .PHONY: program_jlink
 program_jlink:
 	bin2hex.py --offset 0x20010000 bb.out bb.hex
-	JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1 scripts/upload.jlink
+	JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1 scripts/hifive1_rev_b.jlink
 
 
 .PHONY: serial_windows

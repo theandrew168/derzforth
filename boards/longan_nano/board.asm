@@ -1,5 +1,5 @@
 # include definitions related to the GigaDevice GD32VF103 chip
-# passing the --include-chips flag to bronzebeard puts this on the path
+#  (the --include-definitions flag to bronzebeard puts this on the path)
 include GD32VF103.asm
 
 # 32KB @ 0x20000000

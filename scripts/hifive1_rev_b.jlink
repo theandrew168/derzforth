@@ -1,0 +1,3 @@
+loadfile bb.hex
+rnh
+exit

@@ -73,7 +73,7 @@ As far as cables go, just a single USB to Micro-USB cable is necessary.
 ## Build
 With Bronzebeard installed:
 ```
-bronzebeard -c -i boards/<target_board>/ --include-chips derzforth.asm
+bronzebeard -c -i boards/<target_board>/ --include-definitions derzforth.asm
 ```
 
 ## Program

@@ -1,19 +1,6 @@
 # include definitions related to the SiFive FE310-G002 chip
-# passing the --include-chips flag to bronzebeard puts this on the path
+#  (the --include-definitions flag to bronzebeard puts this on the path)
 include FE310-G002.asm
-
-# FE310-G002 Manual: Section 18.2
-UART_BASE_ADDR_0 = 0x10013000
-UART_BASE_ADDR_1 = 0x10023000
-
-# FE310-G002 Manual: Section 18.3
-UART_TXDATA_OFFSET = 0x00
-UART_RXDATA_OFFSET = 0x04
-UART_TXCTRL_OFFSET = 0x08
-UART_RXCTRL_OFFSET = 0x0c
-UART_IE_OFFSET     = 0x10
-UART_IP_OFFSET     = 0x14
-UART_DIV_OFFSET    = 0x18
 
 
 # 16KB @ 0x80000000
