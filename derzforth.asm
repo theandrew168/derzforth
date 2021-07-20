@@ -49,6 +49,10 @@ TIB_SIZE          = 0x0400  # 1KB
 RETURN_STACK_SIZE = 0x0400  # 1KB
 DATA_STACK_SIZE   = 0x0800  # 2KB
 
+DERZFORTH_SIZE = 0x4000  # 16KB
+HEAP_BASE_ADDR = RAM_BASE_ADDR + DERZFORTH_SIZE
+HEAP_SIZE      = RAM_SIZE - DERZFORTH_SIZE
+
 SERIAL_BAUD_RATE = 115200
 
 # word flags (top 2 bits of hash)
@@ -72,6 +76,7 @@ HERE   = s6  # next dict entry addr
 LATEST = s7  # latest dict entry addr
 
 # extra saved regs (use for whatever)
+# use one of these for heap size tracking?
 SAVED0 = s8
 SAVED1 = s9
 SAVED2 = s10
@@ -383,7 +388,7 @@ enter:
 align 4
 word_exit:
     dw 0
-    dw 0x0050a18a
+    dw 0x0050a18a  # tpop_hash('exit')
 code_exit:
     dw %position(body_exit, RAM_BASE_ADDR)
 body_exit:
@@ -394,7 +399,7 @@ body_exit:
 align 4
 word_colon:
     dw %position(word_exit, RAM_BASE_ADDR)
-    dw 0x0000003a 
+    dw 0x0000003a  # tpop_hash(':')
 code_colon:
     dw %position(body_colon, RAM_BASE_ADDR)
 body_colon:
@@ -424,7 +429,7 @@ body_colon:
 align 4
 word_semi:
     dw %position(word_colon, RAM_BASE_ADDR)
-    dw 0x0000003b | F_IMMEDIATE
+    dw 0x0000003b | F_IMMEDIATE  # tpop_hash(';') or'd w/ F_IMMEDIATE flag
 code_semi:
     dw %position(body_semi, RAM_BASE_ADDR)
 body_semi:
@@ -437,7 +442,7 @@ body_semi:
 align 4
 word_at:
     dw %position(word_semi, RAM_BASE_ADDR)
-    dw 0x00000040
+    dw 0x00000040  # tpop_hash('@')
 code_at:
     dw %position(body_at, RAM_BASE_ADDR)
 body_at:
@@ -451,7 +456,7 @@ body_at:
 align 4
 word_ex:
     dw %position(word_at, RAM_BASE_ADDR)
-    dw 0x00000021
+    dw 0x00000021  # tpop_hash('!')
 code_ex:
     dw %position(body_ex, RAM_BASE_ADDR)
 body_ex:
@@ -465,7 +470,7 @@ body_ex:
 align 4
 word_spat:
     dw %position(word_ex, RAM_BASE_ADDR)
-    dw 0x0002776b
+    dw 0x0002776b  # tpop_hash('sp@')
 code_spat:
     dw %position(body_spat, RAM_BASE_ADDR)
 body_spat:
@@ -478,7 +483,7 @@ body_spat:
 align 4
 word_rpat:
     dw %position(word_spat, RAM_BASE_ADDR)
-    dw 0x00027212
+    dw 0x00027212  # tpop_hash('rp@')
 code_rpat:
     dw %position(body_rpat, RAM_BASE_ADDR)
 body_rpat:
@@ -491,7 +496,7 @@ body_rpat:
 align 4
 word_zeroeq:
     dw %position(word_rpat, RAM_BASE_ADDR)
-    dw 0x0000072d
+    dw 0x0000072d  # tpop_hash('0=')
 code_zeroeq:
     dw %position(body_zeroeq, RAM_BASE_ADDR)
 body_zeroeq:
@@ -508,7 +513,7 @@ notzero:
 align 4
 word_plus:
     dw %position(word_zeroeq, RAM_BASE_ADDR)
-    dw 0x0000002b
+    dw 0x0000002b  # tpop_hash('+')
 code_plus:
     dw %position(body_plus, RAM_BASE_ADDR)
 body_plus:
@@ -524,7 +529,7 @@ body_plus:
 align 4
 word_nand:
     dw %position(word_plus, RAM_BASE_ADDR)
-    dw 0x00571bf9
+    dw 0x00571bf9  # tpop_hash('nand')
 code_nand:
     dw %position(body_nand, RAM_BASE_ADDR)
 body_nand:
@@ -538,10 +543,73 @@ body_nand:
     addi DSP, DSP, 4   # inc data stack ptr
     j next
 
+#STATE  = s1  # 0 = execute, 1 = compile
+#TIB    = s2  # text input buffer addr
+#TBUF   = s3  # text buffer addr
+#TLEN   = s4  # text buffer length
+#TPOS   = s5  # text buffer current position
+#HERE   = s6  # next dict entry addr
+#LATEST = s7  # latest dict entry addr
+
+align 4
+word_state:
+    dw %position(word_nand, RAM_BASE_ADDR)
+    dw 0x0d347449  # tpop_hash('state')
+code_state:
+    dw %position(body_state, RAM_BASE_ADDR)
+body_state:
+    sw STATE, 0(DSP)
+    addi DSP, DSP, 4
+    j next
+
+align 4
+word_tib:
+    dw %position(word_state, RAM_BASE_ADDR)
+    dw 0x00027be3  # tpop_hash('tib')
+code_tib:
+    dw %position(body_tib, RAM_BASE_ADDR)
+body_tib:
+    sw TIB, 0(DSP)
+    addi DSP, DSP, 4
+    j next
+
+align 4
+word_toin:
+    dw %position(word_tib, RAM_BASE_ADDR)
+    dw 0x00015b29  # tpop_hash('>in')
+code_toin:
+    dw %position(body_toin, RAM_BASE_ADDR)
+body_toin:
+    sw TPOS, 0(DSP)
+    addi DSP, DSP, 4
+    j next
+
+align 4
+word_here:
+    dw %position(word_toin, RAM_BASE_ADDR)
+    dw 0x00528ec4  # tpop_hash('here')
+code_here:
+    dw %position(body_here, RAM_BASE_ADDR)
+body_here:
+    sw HERE, 0(DSP)
+    addi DSP, DSP, 4
+    j next
+
+align 4
+word_latest:
+    dw %position(word_here, RAM_BASE_ADDR)
+    dw 0x09951a81  # tpop_hash('latest')
+code_latest:
+    dw %position(body_latest, RAM_BASE_ADDR)
+body_latest:
+    sw LATEST, 0(DSP)
+    addi DSP, DSP, 4
+    j next
+
 align 4
 word_key:
-    dw %position(word_nand, RAM_BASE_ADDR)
-    dw 0x00024b45
+    dw %position(word_latest, RAM_BASE_ADDR)
+    dw 0x00024b45  # tpop_hash('key')
 code_key:
     dw %position(body_key, RAM_BASE_ADDR)
 body_key:
@@ -554,7 +622,7 @@ align 4
 latest:  # mark the latest builtin word
 word_emit:
     dw %position(word_key, RAM_BASE_ADDR)
-    dw 0x005066b7
+    dw 0x005066b7  # tpop_hash('emit')
 code_emit:
     dw %position(body_emit, RAM_BASE_ADDR)
 body_emit:

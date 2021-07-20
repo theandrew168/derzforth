@@ -57,8 +57,8 @@ For this board, the only setup necessary is a USB to UART cable.
 #### GD32 Dev Board
 For this board, the only setup necessary is a USB to UART cable.
 
-* Attach TX to pin PA10
-* Attach RX to pin PA9
+* Attach TX to pin RXD (PA10)
+* Attach RX to pin TXD (PA9)
 * Attach GND to GND
 * Attach 3.3V to 3V3 (be sure not to supply 5V to 3.3V or vice versa)
 
@@ -83,7 +83,7 @@ Some boards share a common method of programming and interacting.
 Enable boot mode on your given device:
 * **Longan Nano** - press BOOT, press RESET, release RESET, release BOOT
 * **Wio Lite** - flip BOOT switch to 1, press and release RESET
-* **GD32 Dev Board** - TODO how does this board work?
+* **GD32 Dev Board** - swap BOOT0 jumper to 3V3, press and release RESET, swap BOOT0 jumper to GND
 
 To get a list of available serial ports, run the following command:
 ```
