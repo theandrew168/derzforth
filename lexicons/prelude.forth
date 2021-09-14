@@ -126,8 +126,9 @@
 : 0x80000000 8 256* 256* 256* 16* ;
 
 \ getting fancy
-: , here @ ! here @ 4 + here ! ;
-: immediate latest @ 4 + dup @ 0x80000000 or swap ! ;
-: [ 0 state ! ; immediate
-: ] 1 state ! ;
-: branch rp@ @ dup @ + rp@ ! ;
+\ TODO: these wont work until I fix variables :(
+\: , here @ ! here @ 4 + here ! ;
+\: immediate latest @ 4 + dup @ 0x80000000 or swap ! ;
+\: [ 0 state ! ; immediate
+\: ] 1 state ! ;
+\: branch rp@ @ dup @ + rp@ ! ;
