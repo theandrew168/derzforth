@@ -1,14 +1,14 @@
-# include definitions related to the GigaDevice GD32VF103CBT6 chip
+# include definitions related to the GigaDevice GD32VF103C8T6 chip
 #  (the --include-definitions flag to bronzebeard puts this on the path)
 include GD32VF103.asm
 
-# 32KB @ 0x20000000
+# 20KB @ 0x20000000
 RAM_BASE_ADDR = 0x20000000
-RAM_SIZE = 32 * 1024
+RAM_SIZE = 20 * 1024
 
-# 128KB @ 0x08000000
+# 64KB @ 0x08000000
 ROM_BASE_ADDR = 0x08000000
-ROM_SIZE = 128 * 1024
+ROM_SIZE = 64 * 1024
 
 # 8MHz is the default GD32VF103 clock freq
 CLOCK_FREQ = 8000000

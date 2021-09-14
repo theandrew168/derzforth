@@ -8,6 +8,10 @@ default: build_longan_nano
 build_longan_nano: derzforth.asm
 	bronzebeard -c -i boards/longan_nano/ --include-definitions derzforth.asm
 
+.PHONY: build_longan_nano_lite
+build_longan_nano_lite: derzforth.asm
+	bronzebeard -c -i boards/longan_nano_lite/ --include-definitions derzforth.asm
+
 .PHONY: build_wio_lite
 build_wio_lite: derzforth.asm
 	bronzebeard -c -i boards/wio_lite/ --include-definitions derzforth.asm

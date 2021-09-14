@@ -18,6 +18,7 @@ The hardware requirements for running DerzForth are minimal and straightforward:
 
 DerzForth has been tested on the following RISC-V development boards:
 * [Longan Nano](https://www.seeedstudio.com/Sipeed-Longan-Nano-RISC-V-GD32VF103CBT6-DEV-Board-p-4725.html)
+* [Longan Nano Lite](https://docs.platformio.org/en/latest/boards/gd32v/sipeed-longan-nano-lite.html)
 * [Wio Lite](https://www.seeedstudio.com/Wio-Lite-RISC-V-GD32VF103-p-4293.html)
 * [GD32 Dev Board](https://www.seeedstudio.com/SeeedStudio-GD32-RISC-V-kit-with-LCD-p-4303.html)
 * [HiFive1 Rev B](https://www.sifive.com/boards/hifive1-rev-b)
