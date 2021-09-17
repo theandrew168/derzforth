@@ -47,6 +47,14 @@ For this board, the only setup necessary is a USB to UART cable.
 * Attach GND to pin GND
 * Attach 3.3V to pin 3V3 (be sure not to supply 5V to 3.3V or vice versa)
 
+#### Longan Nano Lite
+For this board, the only setup necessary is a USB to UART cable.
+
+* Attach TX to pin R0 (PA10)
+* Attach RX to pin T0 (PA9)
+* Attach GND to pin GND
+* Attach 3.3V to pin 3V3 (be sure not to supply 5V to 3.3V or vice versa)
+
 #### Wio Lite
 For this board, the only setup necessary is a USB to UART cable.
 

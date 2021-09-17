@@ -1,4 +1,4 @@
-# include definitions related to the GigaDevice GD32VF103 chip
+# include definitions related to the GigaDevice GD32VF103 family of chips
 #  (the --include-definitions flag to bronzebeard puts this on the path)
 include GD32VF103.asm
 
