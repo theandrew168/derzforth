@@ -39,15 +39,7 @@ pip install -r requirements.txt
 Some boards require a USB to UART cable in order to program and/or interact.
 I recommend the [CP2012](https://www.amazon.com/HiLetgo-CP2102-Converter-Adapter-Downloader/dp/B00LODGRV8).
 
-#### Longan Nano
-For this board, the only setup necessary is a USB to UART cable.
-
-* Attach TX to pin R0 (PA10)
-* Attach RX to pin T0 (PA9)
-* Attach GND to pin GND
-* Attach 3.3V to pin 3V3 (be sure not to supply 5V to 3.3V or vice versa)
-
-#### Longan Nano Lite
+#### Longan Nano [Lite]
 For this board, the only setup necessary is a USB to UART cable.
 
 * Attach TX to pin R0 (PA10)
