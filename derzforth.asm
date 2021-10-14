@@ -288,13 +288,16 @@ tib_init:
     li TLEN, 0    # set TLEN to 0
     li TPOS, 0    # set TPOS to 0
 
-# TODO: ignore single-line comments (backslash til newline)
 # TODO: ignore bounded comments (lparen til rparen)
 # TODO: bounds check on TBUF (error or overwrite last char?)
 interpreter_repl:
     # read and echo a single char
     call serial_getc
     call serial_putc
+
+    # check for single-line comment
+    li t0, '\\'                           # comments start with \ char
+    beq a0, t0, interpreter_skip_comment  # skip the comment if \ is found
 
     # check for backspace
     li t0, '\b'
@@ -309,6 +312,16 @@ interpreter_repl:
     li a0, '\b'
     call serial_putc
 
+    j interpreter_repl
+
+interpreter_skip_comment:
+    # read and echo a single char
+    call serial_getc
+    call serial_putc
+
+    # skip char until newline is found
+    li t0, '\n'                           # newlines start with \n
+    bne a0, t0, interpreter_skip_comment  # loop back to SKIP comment unless newline
     j interpreter_repl
 
 interpreter_repl_char:
