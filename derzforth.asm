@@ -460,9 +460,8 @@ word_ex:
 code_ex:
     dw %position(body_ex, RAM_BASE_ADDR)
 body_ex:
-    addi DSP, DSP, -4  # dec data stack ptr
-    lw t0, 0(DSP)      # pop addr into t0
-    addi DSP, DSP, -4  # dec data stack ptr
+    addi DSP, DSP, -8  # dec data stack ptr
+    lw t0, 4(DSP)      # pop addr into t0
     lw t1, 0(DSP)      # pop value into t1
     sw t1, 0(t0)       # store value at addr
     j next
@@ -517,9 +516,8 @@ word_plus:
 code_plus:
     dw %position(body_plus, RAM_BASE_ADDR)
 body_plus:
-    addi DSP, DSP, -4  # dec data stack ptr
-    lw t0, 0(DSP)      # pop first value into t0
-    addi DSP, DSP, -4  # dec data stack ptr
+    addi DSP, DSP, -8  # dec data stack ptr
+    lw t0, 4(DSP)      # pop first value into t0
     lw t1, 0(DSP)      # pop second value into t1
     add t0, t0, t1     # ADD the values together into t0
     sw t0, 0(DSP)      # push value onto stack
@@ -533,9 +531,8 @@ word_nand:
 code_nand:
     dw %position(body_nand, RAM_BASE_ADDR)
 body_nand:
-    addi DSP, DSP, -4  # dec data stack ptr
-    lw t0, 0(DSP)      # pop first value into t0
-    addi DSP, DSP, -4  # dec data stack ptr
+    addi DSP, DSP, -8  # dec data stack ptr
+    lw t0, 4(DSP)      # pop first value into t0
     lw t1, 0(DSP)      # pop second value into t1
     and t0, t0, t1     # AND the values together into t0
     not t0, t0         # NOT t0 (invert the bits)
