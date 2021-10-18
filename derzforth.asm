@@ -172,17 +172,17 @@ lookup_not_found:
     ret
 
 
-# Func: tpop_hash
+# Func: tpop_hash (djb2)
 # Arg: a0 = buffer addr
 # Arg: a1 = buffer size
 # Ret: a0 = hash value
 tpop_hash:
-    li t0, 0            # t0 = hash value
-    li t1, 37           # t1 = prime multiplier
+    li t0, 5381         # t0 = hash value
+    li t1, 33           # t1 = multiplier
 tpop_hash_loop:
     beqz a1, tpop_hash_done
     lbu t2, 0(a0)       # c <- [addr]
-    mul t0, t0, t1      # h = h * 37
+    mul t0, t0, t1      # h = h * 33
     add t0, t0, t2      # h = h + c
     addi a0, a0, 1      # addr += 1
     addi a1, a1, -1     # size -= 1
@@ -378,7 +378,7 @@ enter:
 align 4
 word_exit:
     dw 0
-    dw 0x0050a18a  # tpop_hash('exit')
+    dw 0x3c967e3f  # tpop_hash('exit')
 code_exit:
     dw %position(body_exit, RAM_BASE_ADDR)
 body_exit:
@@ -389,7 +389,7 @@ body_exit:
 align 4
 word_colon:
     dw %position(word_exit, RAM_BASE_ADDR)
-    dw 0x0000003a  # tpop_hash(':')
+    dw 0x0002b5df  # tpop_hash(':')
 code_colon:
     dw %position(body_colon, RAM_BASE_ADDR)
 body_colon:
@@ -419,7 +419,7 @@ body_colon:
 align 4
 word_semi:
     dw %position(word_colon, RAM_BASE_ADDR)
-    dw 0x0000003b | F_IMMEDIATE  # tpop_hash(';') or'd w/ F_IMMEDIATE flag
+    dw 0x0002b5e0 | F_IMMEDIATE  # tpop_hash(';') or'd w/ F_IMMEDIATE flag
 code_semi:
     dw %position(body_semi, RAM_BASE_ADDR)
 body_semi:
@@ -432,7 +432,7 @@ body_semi:
 align 4
 word_at:
     dw %position(word_semi, RAM_BASE_ADDR)
-    dw 0x00000040  # tpop_hash('@')
+    dw 0x0002b5e5  # tpop_hash('@')
 code_at:
     dw %position(body_at, RAM_BASE_ADDR)
 body_at:
@@ -446,7 +446,7 @@ body_at:
 align 4
 word_ex:
     dw %position(word_at, RAM_BASE_ADDR)
-    dw 0x00000021  # tpop_hash('!')
+    dw 0x0002b5c6  # tpop_hash('!')
 code_ex:
     dw %position(body_ex, RAM_BASE_ADDR)
 body_ex:
@@ -459,7 +459,7 @@ body_ex:
 align 4
 word_spat:
     dw %position(word_ex, RAM_BASE_ADDR)
-    dw 0x0002776b  # tpop_hash('sp@')
+    dw 0x0b88aac8  # tpop_hash('sp@')
 code_spat:
     dw %position(body_spat, RAM_BASE_ADDR)
 body_spat:
@@ -472,7 +472,7 @@ body_spat:
 align 4
 word_rpat:
     dw %position(word_spat, RAM_BASE_ADDR)
-    dw 0x00027212  # tpop_hash('rp@')
+    dw 0x0b88a687  # tpop_hash('rp@')
 code_rpat:
     dw %position(body_rpat, RAM_BASE_ADDR)
 body_rpat:
@@ -485,7 +485,7 @@ body_rpat:
 align 4
 word_zeroeq:
     dw %position(word_rpat, RAM_BASE_ADDR)
-    dw 0x0000072d  # tpop_hash('0=')
+    dw 0x005970b2  # tpop_hash('0=')
 code_zeroeq:
     dw %position(body_zeroeq, RAM_BASE_ADDR)
 body_zeroeq:
@@ -502,7 +502,7 @@ notzero:
 align 4
 word_plus:
     dw %position(word_zeroeq, RAM_BASE_ADDR)
-    dw 0x0000002b  # tpop_hash('+')
+    dw 0x0002b5d0  # tpop_hash('+')
 code_plus:
     dw %position(body_plus, RAM_BASE_ADDR)
 body_plus:
@@ -517,7 +517,7 @@ body_plus:
 align 4
 word_nand:
     dw %position(word_plus, RAM_BASE_ADDR)
-    dw 0x00571bf9  # tpop_hash('nand')
+    dw 0x3c9b0c66  # tpop_hash('nand')
 code_nand:
     dw %position(body_nand, RAM_BASE_ADDR)
 body_nand:
@@ -541,7 +541,7 @@ body_nand:
 align 4
 word_state:
     dw %position(word_nand, RAM_BASE_ADDR)
-    dw 0x0d347449  # tpop_hash('state')
+    dw 0x10614a06  # tpop_hash('state')
 code_state:
     dw %position(body_state, RAM_BASE_ADDR)
 body_state:
@@ -552,7 +552,7 @@ body_state:
 align 4
 word_tib:
     dw %position(word_state, RAM_BASE_ADDR)
-    dw 0x00027be3  # tpop_hash('tib')
+    dw 0x0b88ae44  # tpop_hash('tib')
 code_tib:
     dw %position(body_tib, RAM_BASE_ADDR)
 body_tib:
@@ -563,7 +563,7 @@ body_tib:
 align 4
 word_toin:
     dw %position(word_tib, RAM_BASE_ADDR)
-    dw 0x00015b29  # tpop_hash('>in')
+    dw 0x0b87c89a  # tpop_hash('>in')
 code_toin:
     dw %position(body_toin, RAM_BASE_ADDR)
 body_toin:
@@ -574,7 +574,7 @@ body_toin:
 align 4
 word_here:
     dw %position(word_toin, RAM_BASE_ADDR)
-    dw 0x00528ec4  # tpop_hash('here')
+    dw 0x3c97d3a9  # tpop_hash('here')
 code_here:
     dw %position(body_here, RAM_BASE_ADDR)
 body_here:
@@ -585,7 +585,7 @@ body_here:
 align 4
 word_latest:
     dw %position(word_here, RAM_BASE_ADDR)
-    dw 0x09951a81  # tpop_hash('latest')
+    dw 0x0ae8ca72  # tpop_hash('latest')
 code_latest:
     dw %position(body_latest, RAM_BASE_ADDR)
 body_latest:
@@ -596,7 +596,7 @@ body_latest:
 align 4
 word_key:
     dw %position(word_latest, RAM_BASE_ADDR)
-    dw 0x00024b45  # tpop_hash('key')
+    dw 0x0b88878e  # tpop_hash('key')
 code_key:
     dw %position(body_key, RAM_BASE_ADDR)
 body_key:
@@ -609,7 +609,7 @@ align 4
 latest:  # mark the latest builtin word
 word_emit:
     dw %position(word_key, RAM_BASE_ADDR)
-    dw 0x005066b7  # tpop_hash('emit')
+    dw 0x3c964f74  # tpop_hash('emit')
 code_emit:
     dw %position(body_emit, RAM_BASE_ADDR)
 body_emit:

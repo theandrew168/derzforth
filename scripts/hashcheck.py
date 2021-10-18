@@ -23,6 +23,14 @@ def perl_hash(s):
     return h
 
 
+def djb2_hash(s):
+    h = 5381
+    for c in s:
+        h = h + (h << 5) + ord(c) # h * 33 + c
+        h = c_uint32(h).value & ~FLAGS_MASK
+    return h
+
+
 def word_size(s):
     padding = 4 - (len(s) % 4)
     if padding == 4:
@@ -40,8 +48,9 @@ def cli_main():
 
         name = line.split()[1]
 
-        h = tpop_hash(name)
+        #h = tpop_hash(name)
         #h = perl_hash(name)
+        h = djb2_hash(name)
         if h in hashes and name != hashes[h]:
             print('COLLISION of {} and {}: {}'.format(name, hashes[h], h))
         else:
