@@ -193,29 +193,6 @@ tpop_hash_done:
     ret
 
 
-# Func: perl_hash
-# Arg: a0 = buffer addr
-# Arg: a1 = buffer size
-# Ret: a0 = hash value
-perl_hash:
-    li t0, 0            # t0 = hash value
-    li t1, 33           # t1 = prime multiplier
-perl_hash_loop:
-    beqz a1, perl_hash_done
-    lbu t2, 0(a0)       # c <- [addr]
-    mul t0, t0, t1      # h = h * 33
-    add t0, t0, t2      # h = h + c
-    srai t3, t0, 5      # tmp = h >> 5
-    add t0, t0, t3      # h = h + tmp
-    addi a0, a0, 1      # addr += 1
-    addi a1, a1, -1     # size -= 1
-    j perl_hash_loop    # repeat
-perl_hash_done:
-    li t1, ~FLAGS_MASK  # clear the top two bits (used for word flags)
-    and a0, t0, t1      # a0 = final hash value
-    ret
-
-
 ###
 ### interpreter
 ###
