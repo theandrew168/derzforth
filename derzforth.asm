@@ -172,45 +172,22 @@ lookup_not_found:
     ret
 
 
-# Func: tpop_hash
+# Func: djb2_hash
 # Arg: a0 = buffer addr
 # Arg: a1 = buffer size
 # Ret: a0 = hash value
-tpop_hash:
-    li t0, 0            # t0 = hash value
-    li t1, 37           # t1 = prime multiplier
-tpop_hash_loop:
-    beqz a1, tpop_hash_done
-    lbu t2, 0(a0)       # c <- [addr]
-    mul t0, t0, t1      # h = h * 37
-    add t0, t0, t2      # h = h + c
-    addi a0, a0, 1      # addr += 1
-    addi a1, a1, -1     # size -= 1
-    j tpop_hash_loop    # repeat
-tpop_hash_done:
-    li t1, ~FLAGS_MASK  # clear the top two bits (used for word flags)
-    and a0, t0, t1      # a0 = final hash value
-    ret
-
-
-# Func: perl_hash
-# Arg: a0 = buffer addr
-# Arg: a1 = buffer size
-# Ret: a0 = hash value
-perl_hash:
-    li t0, 0            # t0 = hash value
-    li t1, 33           # t1 = prime multiplier
-perl_hash_loop:
-    beqz a1, perl_hash_done
+djb2_hash:
+    li t0, 5381         # t0 = hash value
+    li t1, 33           # t1 = multiplier
+djb2_hash_loop:
+    beqz a1, djb2_hash_done
     lbu t2, 0(a0)       # c <- [addr]
     mul t0, t0, t1      # h = h * 33
     add t0, t0, t2      # h = h + c
-    srai t3, t0, 5      # tmp = h >> 5
-    add t0, t0, t3      # h = h + tmp
     addi a0, a0, 1      # addr += 1
     addi a1, a1, -1     # size -= 1
-    j perl_hash_loop    # repeat
-perl_hash_done:
+    j djb2_hash_loop    # repeat
+djb2_hash_done:
     li t1, ~FLAGS_MASK  # clear the top two bits (used for word flags)
     and a0, t0, t1      # a0 = final hash value
     ret
@@ -342,7 +319,7 @@ interpreter_interpret:
     add TPOS, TPOS, a2       # update TPOS based on strtok bytes consumed
 
     # hash the current token
-    call tpop_hash  # a0 = str hash
+    call djb2_hash  # a0 = str hash
 
     # lookup the hash in the word dict
     mv a1, a0       # a1 = hash of word name
@@ -401,7 +378,7 @@ enter:
 align 4
 word_exit:
     dw 0
-    dw 0x0050a18a  # tpop_hash('exit')
+    dw 0x3c967e3f  # djb2_hash('exit')
 code_exit:
     dw %position(body_exit, RAM_BASE_ADDR)
 body_exit:
@@ -412,7 +389,7 @@ body_exit:
 align 4
 word_colon:
     dw %position(word_exit, RAM_BASE_ADDR)
-    dw 0x0000003a  # tpop_hash(':')
+    dw 0x0002b5df  # djb2_hash(':')
 code_colon:
     dw %position(body_colon, RAM_BASE_ADDR)
 body_colon:
@@ -424,7 +401,7 @@ body_colon:
     add TPOS, TPOS, a2   # update TPOS based on strtok bytes consumed
 
     # hash the current token
-    call tpop_hash       # a0 = str hash
+    call djb2_hash       # a0 = str hash
 
     # write the word's link and hash
     sw LATEST, 0(HERE)   # write link to prev word (LATEST -> [HERE])
@@ -442,7 +419,7 @@ body_colon:
 align 4
 word_semi:
     dw %position(word_colon, RAM_BASE_ADDR)
-    dw 0x0000003b | F_IMMEDIATE  # tpop_hash(';') or'd w/ F_IMMEDIATE flag
+    dw 0x0002b5e0 | F_IMMEDIATE  # djb2_hash(';') or'd w/ F_IMMEDIATE flag
 code_semi:
     dw %position(body_semi, RAM_BASE_ADDR)
 body_semi:
@@ -455,7 +432,7 @@ body_semi:
 align 4
 word_at:
     dw %position(word_semi, RAM_BASE_ADDR)
-    dw 0x00000040  # tpop_hash('@')
+    dw 0x0002b5e5  # djb2_hash('@')
 code_at:
     dw %position(body_at, RAM_BASE_ADDR)
 body_at:
@@ -469,7 +446,7 @@ body_at:
 align 4
 word_ex:
     dw %position(word_at, RAM_BASE_ADDR)
-    dw 0x00000021  # tpop_hash('!')
+    dw 0x0002b5c6  # djb2_hash('!')
 code_ex:
     dw %position(body_ex, RAM_BASE_ADDR)
 body_ex:
@@ -482,7 +459,7 @@ body_ex:
 align 4
 word_spat:
     dw %position(word_ex, RAM_BASE_ADDR)
-    dw 0x0002776b  # tpop_hash('sp@')
+    dw 0x0b88aac8  # djb2_hash('sp@')
 code_spat:
     dw %position(body_spat, RAM_BASE_ADDR)
 body_spat:
@@ -495,7 +472,7 @@ body_spat:
 align 4
 word_rpat:
     dw %position(word_spat, RAM_BASE_ADDR)
-    dw 0x00027212  # tpop_hash('rp@')
+    dw 0x0b88a687  # djb2_hash('rp@')
 code_rpat:
     dw %position(body_rpat, RAM_BASE_ADDR)
 body_rpat:
@@ -508,7 +485,7 @@ body_rpat:
 align 4
 word_zeroeq:
     dw %position(word_rpat, RAM_BASE_ADDR)
-    dw 0x0000072d  # tpop_hash('0=')
+    dw 0x005970b2  # djb2_hash('0=')
 code_zeroeq:
     dw %position(body_zeroeq, RAM_BASE_ADDR)
 body_zeroeq:
@@ -525,7 +502,7 @@ notzero:
 align 4
 word_plus:
     dw %position(word_zeroeq, RAM_BASE_ADDR)
-    dw 0x0000002b  # tpop_hash('+')
+    dw 0x0002b5d0  # djb2_hash('+')
 code_plus:
     dw %position(body_plus, RAM_BASE_ADDR)
 body_plus:
@@ -540,7 +517,7 @@ body_plus:
 align 4
 word_nand:
     dw %position(word_plus, RAM_BASE_ADDR)
-    dw 0x00571bf9  # tpop_hash('nand')
+    dw 0x3c9b0c66  # djb2_hash('nand')
 code_nand:
     dw %position(body_nand, RAM_BASE_ADDR)
 body_nand:
@@ -564,7 +541,7 @@ body_nand:
 align 4
 word_state:
     dw %position(word_nand, RAM_BASE_ADDR)
-    dw 0x0d347449  # tpop_hash('state')
+    dw 0x10614a06  # djb2_hash('state')
 code_state:
     dw %position(body_state, RAM_BASE_ADDR)
 body_state:
@@ -575,7 +552,7 @@ body_state:
 align 4
 word_tib:
     dw %position(word_state, RAM_BASE_ADDR)
-    dw 0x00027be3  # tpop_hash('tib')
+    dw 0x0b88ae44  # djb2_hash('tib')
 code_tib:
     dw %position(body_tib, RAM_BASE_ADDR)
 body_tib:
@@ -586,7 +563,7 @@ body_tib:
 align 4
 word_toin:
     dw %position(word_tib, RAM_BASE_ADDR)
-    dw 0x00015b29  # tpop_hash('>in')
+    dw 0x0b87c89a  # djb2_hash('>in')
 code_toin:
     dw %position(body_toin, RAM_BASE_ADDR)
 body_toin:
@@ -597,7 +574,7 @@ body_toin:
 align 4
 word_here:
     dw %position(word_toin, RAM_BASE_ADDR)
-    dw 0x00528ec4  # tpop_hash('here')
+    dw 0x3c97d3a9  # djb2_hash('here')
 code_here:
     dw %position(body_here, RAM_BASE_ADDR)
 body_here:
@@ -608,7 +585,7 @@ body_here:
 align 4
 word_latest:
     dw %position(word_here, RAM_BASE_ADDR)
-    dw 0x09951a81  # tpop_hash('latest')
+    dw 0x0ae8ca72  # djb2_hash('latest')
 code_latest:
     dw %position(body_latest, RAM_BASE_ADDR)
 body_latest:
@@ -619,7 +596,7 @@ body_latest:
 align 4
 word_key:
     dw %position(word_latest, RAM_BASE_ADDR)
-    dw 0x00024b45  # tpop_hash('key')
+    dw 0x0b88878e  # djb2_hash('key')
 code_key:
     dw %position(body_key, RAM_BASE_ADDR)
 body_key:
@@ -632,7 +609,7 @@ align 4
 latest:  # mark the latest builtin word
 word_emit:
     dw %position(word_key, RAM_BASE_ADDR)
-    dw 0x005066b7  # tpop_hash('emit')
+    dw 0x3c964f74  # djb2_hash('emit')
 code_emit:
     dw %position(body_emit, RAM_BASE_ADDR)
 body_emit:
