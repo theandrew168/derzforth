@@ -172,7 +172,7 @@ lookup_not_found:
     ret
 
 
-# Func: djb2_hash (djb2)
+# Func: djb2_hash
 # Arg: a0 = buffer addr
 # Arg: a1 = buffer size
 # Ret: a0 = hash value
