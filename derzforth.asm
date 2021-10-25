@@ -303,7 +303,7 @@ interpreter_skip_comment:
 interpreter_repl_char:
     add t0, TBUF, TLEN   # t0 = dest addr for this char in TBUF
     li t1, TIB_SIZE      # t1 = buffer size
-    bgeu TLEN, t1, error # bounds check on TBUF
+    bge TLEN, t1, error  # bounds check on TBUF
     sb a0, 0(t0)         # write char into TBUF
     addi TLEN, TLEN, 1   # TLEN += 1
     addi t0, zero, '\n'  # t0 = newline char
