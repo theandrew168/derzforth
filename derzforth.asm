@@ -436,11 +436,11 @@ code_semi:
 body_semi:
     li t0, %position(code_exit, RAM_BASE_ADDR)
 
-    # remove the hidden flag
-    lw t1, 4(HERE)       # load word
+    # clear the hidden flag
+    lw t1, 4(LATEST)     # load word
     li t2, ~F_HIDDEN     # load hidden flag mask into t2
     and t1, t1, t2       # unhide word
-    sw t1, 4(HERE)       # write word
+    sw t1, 4(LATEST)     # write word
 
     sw t0, 0(HERE)       # write addr of "code_exit" to word definition
     addi HERE, HERE, 4   # HERE += 4
