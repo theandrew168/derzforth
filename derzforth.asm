@@ -410,7 +410,7 @@ body_colon:
     # hash the current token
     call djb2_hash       # a0 = str hash
 
-    # add the hidden flag
+    # set the hidden flag
     li t0, F_HIDDEN      # load hidden flag into t0
     or a0, a0, t0        # hide the word
 
@@ -437,10 +437,10 @@ body_semi:
     li t0, %position(code_exit, RAM_BASE_ADDR)
 
     # clear the hidden flag
-    lw t1, 4(LATEST)     # load word
+    lw t1, 4(LATEST)     # load word hash from memory
     li t2, ~F_HIDDEN     # load hidden flag mask into t2
     and t1, t1, t2       # unhide word
-    sw t1, 4(LATEST)     # write word
+    sw t1, 4(LATEST)     # write word hash back to memory
 
     sw t0, 0(HERE)       # write addr of "code_exit" to word definition
     addi HERE, HERE, 4   # HERE += 4
