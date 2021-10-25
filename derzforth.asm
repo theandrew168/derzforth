@@ -437,10 +437,10 @@ body_semi:
     li t0, %position(code_exit, RAM_BASE_ADDR)
 
     # clear the hidden flag
-    lw t1, 4(LATEST)     # load word hash from memory
+    lw t1, 4(LATEST)     # load word name hash (t1 <- [LATEST+4])
     li t2, ~F_HIDDEN     # load hidden flag mask into t2
-    and t1, t1, t2       # unhide word
-    sw t1, 4(LATEST)     # write word hash back to memory
+    and t1, t1, t2       # reveal the word
+    sw t1, 4(LATEST)     # write word name hash (t1 -> [LATEST+4])
 
     sw t0, 0(HERE)       # write addr of "code_exit" to word definition
     addi HERE, HERE, 4   # HERE += 4
