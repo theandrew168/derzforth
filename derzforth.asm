@@ -162,8 +162,8 @@ lookup:
 
     # skip if the word is hidden
     li t1, F_HIDDEN            # load hidden flag into t1
-    and t3, t0, t1             # isolate hidden bit in word hash
-    bnez t3, lookup_next       # if hidden, skip this word and try the next one
+    and t2, t0, t1             # isolate hidden bit in word hash
+    bnez t2, lookup_next       # if hidden, skip this word and try the next one
 
     li t1, ~FLAGS_MASK         # t1 = inverted FLAGS_MASK
     and t0, t0, t1             # ignore flags when comparing hashes
