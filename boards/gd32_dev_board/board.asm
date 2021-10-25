@@ -50,7 +50,7 @@ gpio_config_done:
 # Arg: a0 = baud rate
 serial_init:
     # save return addr (since serial_init calls other funcs)
-    mv s8, ra
+    mv SAVED0, ra
 
     # setup RCU base addr in t0
     li t0, RCU_BASE_ADDR
@@ -85,7 +85,7 @@ serial_init:
 
 serial_init_done:
     # restore return addr and return
-    mv ra, s8
+    mv ra, SAVED0
     ret
 
 

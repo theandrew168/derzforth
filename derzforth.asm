@@ -62,25 +62,23 @@ F_HIDDEN    = 0x40000000
 
 # "The Classical Forth Registers"
 W   = s0  # working register
-IP  = gp  # interpreter pointer
+IP  = s1  # interpreter pointer
 DSP = sp  # data stack pointer
-RSP = tp  # return stack pointer
+RSP = s2  # return stack pointer
 
 # variable registers
-STATE  = s1  # 0 = execute, 1 = compile
-TIB    = s2  # text input buffer addr
-TBUF   = s3  # text buffer addr
-TLEN   = s4  # text buffer length
-TPOS   = s5  # text buffer current position
-HERE   = s6  # next dict entry addr
-LATEST = s7  # latest dict entry addr
+STATE  = s3  # 0 = execute, 1 = compile
+TIB    = s4  # text input buffer addr
+TBUF   = s5  # text buffer addr
+TLEN   = s6  # text buffer length
+TPOS   = s7  # text buffer current position
+HERE   = s8  # next dict entry addr
+LATEST = s9  # latest dict entry addr
 
 # extra saved regs (use for whatever)
 # use one of these for heap size tracking?
-SAVED0 = s8
-SAVED1 = s9
-SAVED2 = s10
-SAVED3 = s11
+SAVED0 = s10
+SAVED1 = s11
 
 
 # Func: memclr
@@ -530,13 +528,13 @@ body_nand:
     addi DSP, DSP, 4   # inc data stack ptr
     j next
 
-#STATE  = s1  # 0 = execute, 1 = compile
-#TIB    = s2  # text input buffer addr
-#TBUF   = s3  # text buffer addr
-#TLEN   = s4  # text buffer length
-#TPOS   = s5  # text buffer current position
-#HERE   = s6  # next dict entry addr
-#LATEST = s7  # latest dict entry addr
+#STATE  = s3  # 0 = execute, 1 = compile
+#TIB    = s4  # text input buffer addr
+#TBUF   = s5  # text buffer addr
+#TLEN   = s6  # text buffer length
+#TPOS   = s7  # text buffer current position
+#HERE   = s8  # next dict entry addr
+#LATEST = s9  # latest dict entry addr
 
 align 4
 word_state:
