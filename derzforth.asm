@@ -159,9 +159,16 @@ strtok_not_found:
 lookup:
     beqz a0, lookup_not_found  # not found if next word addr is 0 (end of dict)
     lw t0, 4(a0)               # t0 = hash of word name
+
+    # skip if the word is hidden
+    li t1, F_HIDDEN            # load hidden flag into t1
+    and t1, t0, t1             # isolate hidden bit in word hash
+    bnez t1, lookup_next       # if hidden, skip this word and try the next one
+
     li t1, ~FLAGS_MASK         # t1 = inverted FLAGS_MASK
     and t0, t0, t1             # ignore flags when comparing hashes
     beq t0, a1, lookup_found   # done if hash (dict) matches hash (lookup)
+lookup_next:
     lw a0, 0(a0)               # follow link to next word in dict
     j lookup                   # repeat
 lookup_found:
@@ -404,6 +411,10 @@ body_colon:
     # hash the current token
     call djb2_hash       # a0 = str hash
 
+    # set the hidden flag
+    li t0, F_HIDDEN      # load hidden flag into t0
+    or a0, a0, t0        # hide the word
+
     # write the word's link and hash
     sw LATEST, 0(HERE)   # write link to prev word (LATEST -> [HERE])
     sw a0, 4(HERE)       # write word name hash (hash -> [HERE + 4])
@@ -424,6 +435,12 @@ word_semi:
 code_semi:
     dw %position(body_semi, RAM_BASE_ADDR)
 body_semi:
+    # clear the hidden flag
+    lw t0, 4(LATEST)     # load word name hash (t0 <- [LATEST+4])
+    li t1, ~F_HIDDEN     # load hidden flag mask into t1
+    and t0, t0, t1       # reveal the word
+    sw t0, 4(LATEST)     # write word name hash (t0 -> [LATEST+4])
+
     li t0, %position(code_exit, RAM_BASE_ADDR)
     sw t0, 0(HERE)       # write addr of "code_exit" to word definition
     addi HERE, HERE, 4   # HERE += 4
