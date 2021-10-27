@@ -317,7 +317,7 @@ interpreter_skip_parens:
 
     # skip char until closing parens is found
     li t0, 0x29                           # closing parens start with )
-    bne a0, t0, interpreter_skip_parens   # loop back to SKIP comment unless newline
+    bne a0, t0, interpreter_skip_parens   # loop back to SKIP parens unless closing parens
     j interpreter_repl
 
 interpreter_repl_char:
