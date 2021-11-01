@@ -272,7 +272,6 @@ tib_init:
     li TLEN, 0    # set TLEN to 0
     li TPOS, 0    # set TPOS to 0
 
-# TODO: ignore bounded comments (lparen til rparen)
 interpreter_repl:
     # read and echo a single char
     call serial_getc
@@ -281,6 +280,10 @@ interpreter_repl:
     # check for single-line comment
     li t0, '\\'                           # comments start with \ char
     beq a0, t0, interpreter_skip_comment  # skip the comment if \ is found
+
+    # check for bounded comments (parens)
+    li t0, 0x28                           # bounded comments start with ( char
+    beq a0, t0, interpreter_skip_parens   # skip the comment if ( is found
 
     # check for backspace
     li t0, '\b'
@@ -305,6 +308,16 @@ interpreter_skip_comment:
     # skip char until newline is found
     li t0, '\n'                           # newlines start with \n
     bne a0, t0, interpreter_skip_comment  # loop back to SKIP comment unless newline
+    j interpreter_repl
+
+interpreter_skip_parens:
+    # read and echo a single char
+    call serial_getc
+    call serial_putc
+
+    # skip char until closing parens is found
+    li t0, 0x29                           # closing parens start with )
+    bne a0, t0, interpreter_skip_parens   # loop back to SKIP parens unless closing parens
     j interpreter_repl
 
 interpreter_repl_char:
