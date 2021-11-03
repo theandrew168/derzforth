@@ -119,7 +119,7 @@ memcpy_done:
 # Arg: a1 = buffer size
 # Ret: a0 = token addr (0 if not found)
 # Ret: a1 = token size (0 if not found)
-# Reg: a2 = total bytes consumed (0 if not found)
+# Ret: a2 = total bytes consumed (0 if not found)
 strtok:
     addi t0, zero, ' '         # t0 = whitespace threshold
     mv t2, a0                  # save buffer's start addr for later
