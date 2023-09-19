@@ -1,5 +1,5 @@
 # DerzForth
-Bare-metal Forth implementation for RISC-V
+Bare-metal Forth implementation for RISC-V RV32I core.
 
 ## About
 Forth was initially designed and created by [Charles Moore](https://en.wikipedia.org/wiki/Charles_H._Moore).
