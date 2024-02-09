@@ -185,11 +185,11 @@ lookup_not_found:
 # Ret: a0 = hash value
 djb2_hash:
     li t0, 5381         # t0 = hash value
-    li t1, 33           # t1 = multiplier
 djb2_hash_loop:
     beqz a1, djb2_hash_done
     lbu t2, 0(a0)       # c <- [addr]
-    mul t0, t0, t1      # h = h * 33
+    slli t1, t0, 5      # t1 = h * 32
+    add t0, t1, t0      # h = t1 + h, so h = h * 33
     add t0, t0, t2      # h = h + c
     addi a0, a0, 1      # addr += 1
     addi a1, a1, -1     # size -= 1
